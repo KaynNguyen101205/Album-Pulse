@@ -1,0 +1,166 @@
+# 04 — Database (Prisma Schema)
+
+## 1) Notes
+- Dùng **Supabase Postgres**
+- Prisma model names dùng tiếng Việt để code dễ theo style của bạn.
+- Spotify IDs lưu trong field `spotifyId` để map với API.
+
+## 2) Prisma schema (copy sang `prisma/schema.prisma`)
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TimeRangeSpotify {
+  SHORT_TERM
+  MEDIUM_TERM
+  LONG_TERM
+}
+
+enum NguonGoiY {
+  TOP
+  RECENT
+  MIX
+}
+
+enum DoChinhXacNgayPhatHanh {
+  YEAR
+  MONTH
+  DAY
+}
+
+model NguoiDung {
+  id            String   @id @default(cuid())
+  spotifyId     String   @unique
+  tenHienThi    String?
+  email         String?  @unique
+  anhDaiDienUrl String?
+  quocGia       String?
+  product       String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  oauthToken    OAuthToken?
+  yeuThich      YeuThichAlbum[]
+  dotGoiY       DotGoiY[]
+  caiDat        CaiDatNguoiDung?
+}
+
+model OAuthToken {
+  id           String   @id @default(cuid())
+  nguoiDungId  String   @unique
+  refreshToken String
+  scope        String?
+  tokenType    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  nguoiDung    NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+}
+
+model CaiDatNguoiDung {
+  id               String          @id @default(cuid())
+  nguoiDungId      String          @unique
+  soLuongGoiY      Int             @default(20)
+  timeRangeMacDinh TimeRangeSpotify @default(MEDIUM_TERM)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  nguoiDung        NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+}
+
+model Album {
+  id            String   @id @default(cuid())
+  spotifyId     String   @unique
+  ten           String
+  ngayPhatHanh  String?
+  doChinhXacNgay DoChinhXacNgayPhatHanh?
+  anhBiaUrl     String?
+  spotifyUrl    String?
+  uri           String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ngheSi        AlbumNgheSi[]
+  yeuThich      YeuThichAlbum[]
+  goiY          GoiYAlbum[]
+}
+
+model NgheSi {
+  id          String   @id @default(cuid())
+  spotifyId   String   @unique
+  ten         String
+  anhUrl      String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  album       AlbumNgheSi[]
+}
+
+model AlbumNgheSi {
+  albumId   String
+  ngheSiId  String
+  viTri     Int?
+
+  album     Album   @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  ngheSi    NgheSi  @relation(fields: [ngheSiId], references: [id], onDelete: Cascade)
+
+  @@id([albumId, ngheSiId])
+  @@index([ngheSiId])
+  @@index([albumId])
+}
+
+model YeuThichAlbum {
+  nguoiDungId String
+  albumId     String
+  createdAt   DateTime @default(now())
+
+  nguoiDung   NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+  album       Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@id([nguoiDungId, albumId])
+  @@index([albumId])
+}
+
+model DotGoiY {
+  id          String   @id @default(cuid())
+  nguoiDungId String
+  timeRange   TimeRangeSpotify @default(MEDIUM_TERM)
+  nguon       NguonGoiY        @default(MIX)
+  ghiChu      String?
+  createdAt   DateTime @default(now())
+
+  nguoiDung   NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+  items       GoiYAlbum[]
+
+  @@index([nguoiDungId, createdAt])
+}
+
+model GoiYAlbum {
+  id        String   @id @default(cuid())
+  dotGoiYId String
+  albumId   String
+
+  diem      Float    @default(0)
+  lyDo      String?
+  viTri     Int?
+
+  createdAt DateTime @default(now())
+
+  dotGoiY   DotGoiY  @relation(fields: [dotGoiYId], references: [id], onDelete: Cascade)
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([dotGoiYId, albumId])
+  @@index([albumId])
+  @@index([dotGoiYId])
+}
+```
