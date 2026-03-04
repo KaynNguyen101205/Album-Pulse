@@ -1,6 +1,8 @@
 import 'server-only';
+import { spotifyGet } from './client';
 
-const PKCE_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+const PKCE_CHARSET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
 const STATE_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
 function randomString(length: number, charset: string): string {
@@ -87,15 +89,6 @@ export type SpotifyMeProfile = {
 };
 
 export async function fetchSpotifyMe(accessToken: string): Promise<SpotifyMeProfile> {
-  const res = await fetch(SPOTIFY_ME_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Spotify /me failed: ${res.status} ${text}`);
-  }
-
-  return res.json() as Promise<SpotifyMeProfile>;
+  return spotifyGet<SpotifyMeProfile>(SPOTIFY_ME_URL, accessToken);
 }
 
