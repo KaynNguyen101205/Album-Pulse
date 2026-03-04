@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { taoCodeVerifier, taoCodeChallengeS256, taoState } from '@/lib/spotify/oauth';
+import { serializeScopes, SPOTIFY_LOGIN_SCOPES } from '@/lib/spotify/scopes';
 
 const SPOTIFY_AUTHORIZE_URL = 'https://accounts.spotify.com/authorize';
-const OAUTH_SCOPE = ['user-top-read', 'user-read-recently-played'].join(' ');
+const OAUTH_SCOPE = serializeScopes(SPOTIFY_LOGIN_SCOPES);
 
 export async function GET() {
   let clientId: string;

@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { exchangeCodeForTokens, fetchSpotifyMe } from '@/lib/spotify/oauth';
+import {
+  buildFetchProfileFailedLogMeta,
+  buildFetchProfileFailedPayload,
+} from '@/lib/spotify/callback-errors';
+import { getMissingScopes, SPOTIFY_PROFILE_SCOPES } from '@/lib/spotify/scopes';
 import { setSessionCookie } from '@/lib/session';
 import { upsertUserAndTokens } from '@/server/services/auth.service';
 
@@ -55,12 +60,23 @@ export async function GET(request: Request) {
     );
   }
 
+  if (typeof tokens.scope === 'string' && tokens.scope.trim()) {
+    const missingScopes = getMissingScopes(tokens.scope, SPOTIFY_PROFILE_SCOPES);
+    if (missingScopes.length > 0) {
+      console.warn('[callback] token scopes missing required profile scopes', {
+        grantedScopes: tokens.scope,
+        missingScopes,
+      });
+    }
+  }
+
   let profile;
   try {
     profile = await fetchSpotifyMe(tokens.access_token);
-  } catch {
+  } catch (err) {
+    console.error('[callback] fetch profile failed', buildFetchProfileFailedLogMeta(err));
     return NextResponse.json(
-      { error: 'FETCH_PROFILE_FAILED' },
+      buildFetchProfileFailedPayload(err, process.env.NODE_ENV === 'production'),
       { status: 500 }
     );
   }
