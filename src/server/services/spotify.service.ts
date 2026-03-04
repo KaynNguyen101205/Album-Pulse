@@ -4,10 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { getSessionUserId } from '@/lib/session';
 import { refreshAccessToken, type TokenResponse } from '@/lib/spotify/oauth';
 import { spotifyGet } from '@/lib/spotify/client';
+import type { Album } from '@/types/domain';
 import {
   SpotifyApiError,
   type SpotifyTopArtistsResponse,
   type SpotifyRecentlyPlayedResponse,
+  type SpotifyArtistAlbumsResponse,
+  type SpotifyImage,
 } from '@/lib/spotify/types';
 
 export class NotLoggedInError extends Error {
@@ -179,5 +182,80 @@ export async function fetchRecentlyPlayed(
 
   return counts;
 }
+
+function pickBestImageUrl(images?: SpotifyImage[]): string | undefined {
+  if (!images || images.length === 0) return undefined;
+
+  const sorted = [...images].sort((a, b) => (b.width ?? 0) - (a.width ?? 0));
+
+  const preferred = sorted.find((img) => (img.width ?? 0) >= 300);
+  return (preferred ?? sorted[0]).url;
+}
+
+function normalizeSpotifyAlbumToDomain(album: SpotifyArtistAlbumsResponse['items'][number]): Album {
+  const primaryArtist = album.artists[0];
+
+  return {
+    id: album.id,
+    name: album.name,
+    artistId: primaryArtist?.id ?? '',
+    artistName: primaryArtist?.name ?? 'Unknown artist',
+    releaseDate: album.release_date,
+    spotifyUrl: album.external_urls?.spotify,
+    images: album.images,
+  };
+}
+
+export async function fetchAlbumsForArtist(
+  accessToken: string,
+  artistId: string,
+  limit = 20
+): Promise<Album[]> {
+  const cappedLimit = Math.min(Math.max(limit, 1), 20);
+
+  const res = await spotifyGet<SpotifyArtistAlbumsResponse>(
+    `/artists/${artistId}/albums?include_groups=album&limit=${cappedLimit}`,
+    accessToken
+  );
+
+  const seen = new Set<string>();
+  const albums: Album[] = [];
+
+  for (const album of res.items) {
+    if (!album.id || seen.has(album.id)) continue;
+    seen.add(album.id);
+
+    albums.push(normalizeSpotifyAlbumToDomain(album));
+  }
+
+  return albums;
+}
+
+export async function fetchCandidateAlbums(
+  accessToken: string,
+  topArtistIds: string[],
+  perArtistLimit = 20
+): Promise<Album[]> {
+  const concurrency = 3;
+  const allAlbums = new Map<string, Album>();
+
+  for (let i = 0; i < topArtistIds.length; i += concurrency) {
+    const slice = topArtistIds.slice(i, i + concurrency);
+
+    const results = await Promise.all(
+      slice.map((artistId) => fetchAlbumsForArtist(accessToken, artistId, perArtistLimit))
+    );
+
+    for (const albums of results) {
+      for (const album of albums) {
+        if (allAlbums.has(album.id)) continue;
+        allAlbums.set(album.id, album);
+      }
+    }
+  }
+
+  return Array.from(allAlbums.values());
+}
+
 
 

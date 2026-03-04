@@ -66,4 +66,9 @@ export type SpotifyRecentlyPlayedResponse = {
   }>;
 };
 
+export type SpotifyArtistAlbumsResponse = {
+  items: SpotifyAlbum[];
+};
+
+
 
