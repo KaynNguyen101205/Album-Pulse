@@ -68,7 +68,8 @@ export async function GET(request: Request) {
   let nguoiDungId: string;
   try {
     nguoiDungId = await upsertUserAndTokens(profile, tokens);
-  } catch {
+  } catch (err) {
+    console.error('[callback] DB upsert failed:', err);
     return NextResponse.json(
       { error: 'DB_UPSERT_FAILED' },
       { status: 500 }
