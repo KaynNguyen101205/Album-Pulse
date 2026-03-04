@@ -32,3 +32,25 @@ export class SpotifyApiError extends Error {
   }
 }
 
+export type SpotifyImage = {
+  url: string;
+  width?: number;
+  height?: number;
+};
+
+export type SpotifyArtist = {
+  id: string;
+  name: string;
+};
+
+export type SpotifyAlbum = {
+  id: string;
+  name: string;
+  release_date: string;
+  artists: SpotifyArtist[];
+  images?: SpotifyImage[];
+  external_urls?: {
+    spotify?: string;
+  };
+};
+
