@@ -4,6 +4,10 @@ import { SpotifyApiError, type SpotifyErrorCode } from './types';
 
 const SPOTIFY_API_BASE_URL = 'https://api.spotify.com/v1';
 
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function getRetryAfterSeconds(res: Response): number | undefined {
   const value = res.headers.get('Retry-After');
   if (!value) return undefined;
@@ -97,17 +101,41 @@ export async function spotifyRequest<T>(
     requestBody = JSON.stringify(body);
   }
 
-  const res = await fetch(url, {
-    ...init,
-    method,
-    headers,
-    body: requestBody,
-  });
+  const maxAttempts = 3;
 
-  const data = await safeJson(res);
+  // Retries:
+  // - 429 with Retry-After: wait exactly header seconds (+ small jitter) then retry
+  // - 429 without Retry-After: exponential backoff 500ms, 1000ms, 2000ms
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const res = await fetch(url, {
+      ...init,
+      method,
+      headers,
+      body: requestBody,
+    });
 
-  if (!res.ok) {
+    const data = await safeJson(res);
+
+    if (res.ok) {
+      return (data as T) ?? (null as T);
+    }
+
     const status = res.status;
+
+    if (status === 429 && attempt < maxAttempts) {
+      const retryAfterSeconds = getRetryAfterSeconds(res);
+
+      if (retryAfterSeconds !== undefined) {
+        const jitterMs = 100 + Math.floor(Math.random() * 200);
+        await sleep(retryAfterSeconds * 1000 + jitterMs);
+      } else {
+        const backoffMs = 500 * 2 ** (attempt - 1);
+        await sleep(backoffMs);
+      }
+
+      continue;
+    }
+
     const code = mapStatusToErrorCode(status);
     const retryAfterSeconds = status === 429 ? getRetryAfterSeconds(res) : undefined;
 
@@ -124,7 +152,13 @@ export async function spotifyRequest<T>(
     });
   }
 
-  return (data as T) ?? (null as T);
+  // Should not be reachable because we throw inside the loop on the last attempt,
+  // but keep a defensive fallback.
+  throw new SpotifyApiError({
+    code: 'rate_limited',
+    status: 429,
+    message: 'Spotify request failed after maximum retry attempts (rate limited).',
+  });
 }
 
 export function spotifyGet<T>(

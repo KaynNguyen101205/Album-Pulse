@@ -51,6 +51,30 @@ export type TokenResponse = {
   scope?: string;
 };
 
+export async function refreshAccessToken(
+  refreshToken: string,
+  clientId: string
+): Promise<TokenResponse> {
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+    client_id: clientId,
+  });
+
+  const res = await fetch(SPOTIFY_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Spotify token refresh failed: ${res.status} ${text}`);
+  }
+
+  return res.json() as Promise<TokenResponse>;
+}
+
 export async function exchangeCodeForTokens(
   code: string,
   codeVerifier: string,
