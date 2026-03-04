@@ -211,10 +211,12 @@ export async function fetchAlbumsForArtist(
   artistId: string,
   limit = 20
 ): Promise<Album[]> {
-  const cappedLimit = Math.min(Math.max(limit, 1), 20);
+  // Spotify's default limit for this endpoint is 20, so we can omit the
+  // limit query param entirely to avoid "Invalid limit" issues.
+  void limit; // currently unused but kept for API compatibility
 
   const res = await spotifyGet<SpotifyArtistAlbumsResponse>(
-    `/artists/${artistId}/albums?include_groups=album&limit=${cappedLimit}`,
+    `/artists/${artistId}/albums?include_groups=album`,
     accessToken
   );
 
