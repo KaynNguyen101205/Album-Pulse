@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { exchangeCodeForTokens, fetchSpotifyMe } from '@/lib/spotify/oauth';
-import { createSessionRecord, getSessionCookieName, getSessionCookieOptions } from '@/lib/session';
+import { setSessionCookie } from '@/lib/session';
 import { upsertUserAndTokens } from '@/server/services/auth.service';
 
 const CLEAR_COOKIE_OPTIONS = {
@@ -76,15 +76,13 @@ export async function GET(request: Request) {
     );
   }
 
-  const sessionId = await createSessionRecord(nguoiDungId);
-
   const isProd = process.env.NODE_ENV === 'production';
   const res = NextResponse.redirect(new URL('/dashboard', request.url), 302);
 
   res.cookies.set('spotify_code_verifier', '', { ...CLEAR_COOKIE_OPTIONS, secure: isProd });
   res.cookies.set('oauth_state', '', { ...CLEAR_COOKIE_OPTIONS, secure: isProd });
 
-  res.cookies.set(getSessionCookieName(), sessionId, getSessionCookieOptions());
+  await setSessionCookie(res, nguoiDungId);
 
   return res;
 }

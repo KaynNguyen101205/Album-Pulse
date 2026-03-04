@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
+import { requireSession } from '@/lib/session';
 
-// Placeholder favorites route.
-// Replace with real implementation to list/save user favorite albums.
 export async function GET() {
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+  const userId = auth;
+
   return NextResponse.json({
     ok: true,
     message: 'Favorites endpoint is not implemented yet.',
+    userId,
   });
 }

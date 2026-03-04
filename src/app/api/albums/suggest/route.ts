@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
+import { requireSession } from '@/lib/session';
 
-// Placeholder route to keep the file a valid module.
-// Replace this with the real album suggestion implementation later.
 export async function GET() {
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
+  const userId = auth;
+
   return NextResponse.json({
     ok: true,
     message: 'Album suggestions endpoint is not implemented yet.',
+    userId,
   });
 }

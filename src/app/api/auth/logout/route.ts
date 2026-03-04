@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
+import { clearSessionCookie } from '@/lib/session';
 
-// Placeholder logout route for clearing Spotify session/tokens.
-// Replace with real implementation when wiring up auth.
 export async function POST() {
-  return NextResponse.json({
-    ok: true,
-    message: 'Auth logout endpoint is not implemented yet.',
-  });
+  const res = NextResponse.json({ ok: true });
+  await clearSessionCookie(res);
+  return res;
 }
