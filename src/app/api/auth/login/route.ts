@@ -11,8 +11,8 @@ export async function GET() {
 
   try {
     const { env } = await import('@/lib/env');
-    clientId = env.SPOTIFY_CLIENT_ID;
-    redirectUri = env.SPOTIFY_REDIRECT_URI;
+    clientId = env.SPOTIFY_CLIENT_ID.trim();
+    redirectUri = env.SPOTIFY_REDIRECT_URI.trim();
   } catch (error) {
     const message =
       error instanceof Error
