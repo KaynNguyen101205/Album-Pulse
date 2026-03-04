@@ -54,3 +54,16 @@ export type SpotifyAlbum = {
   };
 };
 
+export type SpotifyTopArtistsResponse = {
+  items: Array<SpotifyArtist>;
+};
+
+export type SpotifyRecentlyPlayedResponse = {
+  items: Array<{
+    track: {
+      artists: SpotifyArtist[];
+    };
+  }>;
+};
+
+

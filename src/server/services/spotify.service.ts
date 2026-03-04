@@ -4,7 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { getSessionUserId } from '@/lib/session';
 import { refreshAccessToken, type TokenResponse } from '@/lib/spotify/oauth';
 import { spotifyGet } from '@/lib/spotify/client';
-import { SpotifyApiError } from '@/lib/spotify/types';
+import {
+  SpotifyApiError,
+  type SpotifyTopArtistsResponse,
+  type SpotifyRecentlyPlayedResponse,
+} from '@/lib/spotify/types';
 
 export class NotLoggedInError extends Error {
   constructor(message = 'User is not logged in.') {
@@ -121,4 +125,59 @@ export async function spotifyGetWithAuth<T>(path: string): Promise<T> {
     }
   }
 }
+
+export type TopArtistSignal = {
+  artistId: string;
+  name: string;
+  rank: number;
+};
+
+export type RecentPlayCountsByArtist = Record<string, number>;
+
+export async function fetchTopArtists(
+  accessToken: string,
+  timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term'
+): Promise<TopArtistSignal[]> {
+  const res = await spotifyGet<SpotifyTopArtistsResponse>(
+    `/me/top/artists?limit=20&time_range=${timeRange}`,
+    accessToken
+  );
+
+  return res.items.map((artist, index) => ({
+    artistId: artist.id,
+    name: artist.name,
+    rank: index + 1,
+  }));
+}
+
+export async function fetchRecentlyPlayed(
+  accessToken: string,
+  limit = 50
+): Promise<RecentPlayCountsByArtist> {
+  const cappedLimit = Math.min(Math.max(limit, 1), 50);
+
+  const res = await spotifyGet<SpotifyRecentlyPlayedResponse>(
+    `/me/player/recently-played?limit=${cappedLimit}`,
+    accessToken
+  );
+
+  const counts: RecentPlayCountsByArtist = {};
+
+  if (!res.items || res.items.length === 0) {
+    return counts;
+  }
+
+  for (const item of res.items) {
+    const primaryArtist = item.track?.artists?.[0];
+    if (!primaryArtist) continue;
+
+    const id = primaryArtist.id;
+    if (!id) continue;
+
+    counts[id] = (counts[id] ?? 0) + 1;
+  }
+
+  return counts;
+}
+
 
