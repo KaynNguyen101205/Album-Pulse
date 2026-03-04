@@ -38,21 +38,37 @@ model NguoiDung {
   updatedAt     DateTime @updatedAt
 
   oauthToken    OAuthToken?
+  phienDangNhap PhienDangNhap[]
   yeuThich      YeuThichAlbum[]
   dotGoiY       DotGoiY[]
   caiDat        CaiDatNguoiDung?
 }
 
 model OAuthToken {
-  id           String   @id @default(cuid())
-  nguoiDungId  String   @unique
-  refreshToken String
-  scope        String?
-  tokenType    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  nguoiDungId   String   @unique
+  accessToken   String
+  refreshToken  String
+  expiresAt     DateTime
+  scope         String?
+  tokenType     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  nguoiDung    NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+  nguoiDung     NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+}
+
+model PhienDangNhap {
+  id          String   @id @default(cuid())
+  nguoiDungId String
+  expiresAt   DateTime
+
+  createdAt   DateTime @default(now())
+
+  nguoiDung   NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+
+  @@index([nguoiDungId])
+  @@index([expiresAt])
 }
 
 model CaiDatNguoiDung {
