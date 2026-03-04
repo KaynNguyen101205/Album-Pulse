@@ -31,13 +31,13 @@ jobs:
           fi
 
       - name: Lint
-        run: npm run lint --if-present
+        run: npm run lint
 
       - name: Typecheck
-        run: npm run typecheck --if-present
+        run: npm run typecheck
 
       - name: Tests
-        run: npm test --if-present
+        run: npm test
 
       - name: Build
         run: npm run build
