@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { taoCodeVerifier, taoCodeChallengeS256, taoState } from '@/lib/spotify/oauth';
+import { shouldForceSpotifyShowDialog } from '@/lib/spotify/login-url';
 import { serializeScopes, SPOTIFY_LOGIN_SCOPES } from '@/lib/spotify/scopes';
 
 const SPOTIFY_AUTHORIZE_URL = 'https://accounts.spotify.com/authorize';
 const OAUTH_SCOPE = serializeScopes(SPOTIFY_LOGIN_SCOPES);
+export const runtime = 'nodejs';
 
 export async function GET() {
   let clientId: string;
@@ -48,6 +50,9 @@ export async function GET() {
   url.searchParams.set('state', state);
   url.searchParams.set('code_challenge_method', 'S256');
   url.searchParams.set('code_challenge', codeChallenge);
+  if (shouldForceSpotifyShowDialog(process.env.SPOTIFY_FORCE_SHOW_DIALOG)) {
+    url.searchParams.set('show_dialog', 'true');
+  }
 
   return NextResponse.redirect(url.toString(), 302);
 }

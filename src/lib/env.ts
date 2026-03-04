@@ -30,6 +30,7 @@ export const env = {
 
   // Optional, but commonly used on the server for the Authorization Code flow with refresh tokens.
   SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
+  SPOTIFY_FORCE_SHOW_DIALOG: process.env.SPOTIFY_FORCE_SHOW_DIALOG,
 } as const;
 
 export type Env = typeof env;
