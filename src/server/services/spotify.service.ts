@@ -197,6 +197,7 @@ function normalizeSpotifyAlbumToDomain(album: SpotifyArtistAlbumsResponse['items
 
   return {
     id: album.id,
+    spotifyId: album.id,
     name: album.name,
     artistId: primaryArtist?.id ?? '',
     artistName: primaryArtist?.name ?? 'Unknown artist',
@@ -250,8 +251,9 @@ export async function fetchCandidateAlbums(
 
     for (const albums of results) {
       for (const album of albums) {
-        if (allAlbums.has(album.id)) continue;
-        allAlbums.set(album.id, album);
+        const dedupeKey = album.spotifyId || album.id;
+        if (allAlbums.has(dedupeKey)) continue;
+        allAlbums.set(dedupeKey, album);
       }
     }
   }
