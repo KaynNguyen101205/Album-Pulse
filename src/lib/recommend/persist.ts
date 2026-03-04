@@ -22,6 +22,7 @@ export type PersistRecommendationSnapshotInput = {
 
 export type PersistRecommendationSnapshotResult = {
   dotGoiYId: string;
+  createdAt: Date;
   itemCount: number;
 };
 
@@ -77,6 +78,7 @@ export async function persistRecommendationSnapshot(
 
     return {
       dotGoiYId: dotGoiY.id,
+      createdAt: dotGoiY.createdAt,
       itemCount: goiYAlbumsToCreate.length,
     };
   });

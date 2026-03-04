@@ -1,15 +1,77 @@
 import 'server-only';
 
-import type {
-  DoChinhXacNgayPhatHanh,
-  NguonGoiY,
+import {
   Prisma,
-  TimeRangeSpotify,
+  type DoChinhXacNgayPhatHanh,
+  type NguonGoiY,
+  type TimeRangeSpotify,
 } from '@prisma/client';
 
+import { prisma } from '@/lib/prisma';
 import type { Album } from '@/types/domain';
 
 type TxClient = Prisma.TransactionClient;
+
+const runItemSelect = Prisma.validator<Prisma.GoiYAlbumSelect>()({
+  id: true,
+  dotGoiYId: true,
+  albumId: true,
+  diem: true,
+  lyDo: true,
+  viTri: true,
+  createdAt: true,
+  album: {
+    select: {
+      id: true,
+      spotifyId: true,
+      ten: true,
+      anhBiaUrl: true,
+      spotifyUrl: true,
+      ngayPhatHanh: true,
+    },
+  },
+});
+
+const runWithItemsSelect = Prisma.validator<Prisma.DotGoiYSelect>()({
+  id: true,
+  nguoiDungId: true,
+  createdAt: true,
+  timeRange: true,
+  nguon: true,
+  ghiChu: true,
+  items: {
+    select: runItemSelect,
+    orderBy: [{ viTri: 'asc' }, { id: 'asc' }],
+  },
+});
+
+const runSummarySelect = Prisma.validator<Prisma.DotGoiYSelect>()({
+  id: true,
+  nguoiDungId: true,
+  createdAt: true,
+  timeRange: true,
+  nguon: true,
+  ghiChu: true,
+  _count: {
+    select: {
+      items: true,
+    },
+  },
+});
+
+export type RecommendationRunWithItemsRecord = Prisma.DotGoiYGetPayload<{
+  select: typeof runWithItemsSelect;
+}>;
+
+export type RecommendationRunSummaryRecord = Prisma.DotGoiYGetPayload<{
+  select: typeof runSummarySelect;
+}>;
+
+export type ListRunsByUserInput = {
+  limit: number;
+  cursorCreatedAt?: Date | null;
+  cursorId?: string | null;
+};
 
 function inferReleaseDatePrecision(releaseDate?: string | null): DoChinhXacNgayPhatHanh | null {
   if (!releaseDate) return null;
@@ -115,7 +177,7 @@ export async function createDotGoiY(
     nguon: NguonGoiY;
     ghiChu?: string | null;
   }
-): Promise<{ id: string }> {
+): Promise<{ id: string; createdAt: Date }> {
   return tx.dotGoiY.create({
     data: {
       nguoiDungId: input.nguoiDungId,
@@ -123,7 +185,7 @@ export async function createDotGoiY(
       nguon: input.nguon,
       ghiChu: input.ghiChu ?? null,
     },
-    select: { id: true },
+    select: { id: true, createdAt: true },
   });
 }
 
@@ -141,5 +203,59 @@ export async function createGoiYAlbums(
 
   await tx.goiYAlbum.createMany({
     data: input,
+  });
+}
+
+export async function findLatestRunByUser(
+  nguoiDungId: string
+): Promise<RecommendationRunWithItemsRecord | null> {
+  return prisma.dotGoiY.findFirst({
+    where: { nguoiDungId },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: runWithItemsSelect,
+  });
+}
+
+export async function listRunsByUser(
+  nguoiDungId: string,
+  input: ListRunsByUserInput
+): Promise<RecommendationRunSummaryRecord[]> {
+  const { limit, cursorCreatedAt, cursorId } = input;
+  const hasCursor = cursorCreatedAt instanceof Date && typeof cursorId === 'string' && cursorId.length > 0;
+
+  return prisma.dotGoiY.findMany({
+    where: {
+      nguoiDungId,
+      ...(hasCursor
+        ? {
+            OR: [
+              { createdAt: { lt: cursorCreatedAt } },
+              { createdAt: cursorCreatedAt, id: { lt: cursorId! } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit,
+    select: runSummarySelect,
+  });
+}
+
+export async function findRunWithItemsById(
+  nguoiDungId: string,
+  runId: string
+): Promise<RecommendationRunWithItemsRecord | null> {
+  return prisma.dotGoiY.findFirst({
+    where: {
+      id: runId,
+      nguoiDungId,
+    },
+    select: runWithItemsSelect,
+  });
+}
+
+export async function countRunItems(dotGoiYId: string): Promise<number> {
+  return prisma.goiYAlbum.count({
+    where: { dotGoiYId },
   });
 }
