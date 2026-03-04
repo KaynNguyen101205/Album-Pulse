@@ -19,15 +19,6 @@ export async function upsertUserAndTokens(
       anhDaiDienUrl: imageUrl,
       quocGia: profile.country ?? null,
       product: profile.product ?? null,
-      oauthToken: {
-        create: {
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token ?? '',
-          expiresAt,
-          scope: tokens.scope ?? null,
-          tokenType: tokens.token_type ?? null,
-        },
-      },
     },
     update: {
       tenHienThi: profile.display_name ?? null,
@@ -35,28 +26,31 @@ export async function upsertUserAndTokens(
       anhDaiDienUrl: imageUrl,
       quocGia: profile.country ?? null,
       product: profile.product ?? null,
-      oauthToken: {
-        upsert: {
-          create: {
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token ?? '',
-            expiresAt,
-            scope: tokens.scope ?? null,
-            tokenType: tokens.token_type ?? null,
-          },
-          update: {
-            accessToken: tokens.access_token,
-            expiresAt,
-            scope: tokens.scope ?? null,
-            tokenType: tokens.token_type ?? null,
-            ...(tokens.refresh_token
-              ? { refreshToken: tokens.refresh_token }
-              : {}),
-          },
-        },
-      },
     },
     select: { id: true },
+  });
+
+  const tokenData = {
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token ?? '',
+    expiresAt,
+    scope: tokens.scope ?? null,
+    tokenType: tokens.token_type ?? null,
+  };
+
+  await prisma.oAuthToken.upsert({
+    where: { nguoiDungId: nguoiDung.id },
+    create: {
+      nguoiDungId: nguoiDung.id,
+      ...tokenData,
+    },
+    update: {
+      accessToken: tokens.access_token,
+      expiresAt,
+      scope: tokens.scope ?? null,
+      tokenType: tokens.token_type ?? null,
+      ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
+    },
   });
 
   return nguoiDung.id;
