@@ -8,6 +8,7 @@ export type Artist = {
 
 export type Album = {
   id: AlbumId;
+  spotifyId: string;
   name: string;
   artistId: ArtistId;
   artistName: string;
@@ -23,6 +24,8 @@ export type Album = {
 export type RecommendedAlbum = {
   album: Album;
   score: number;
+  viTri: number;
+  lyDo: string;
   reason: string;
 };
 

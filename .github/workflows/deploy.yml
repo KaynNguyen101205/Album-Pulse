@@ -1,0 +1,11 @@
+name: Deploy (disabled placeholder)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy is intentionally disabled
+        run: echo "Deploy workflow is currently disabled. Triggered manually for placeholder validation."

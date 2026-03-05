@@ -1,0 +1,91 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(155deg, #f7fafc 0%, #ecf3ff 55%, #f6fbf7 100%);
+}
+
+.card {
+  width: 100%;
+  max-width: 34rem;
+  padding: 2rem;
+  border: 1px solid #d9e0ea;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 45px rgba(16, 24, 40, 0.12);
+  text-align: center;
+  font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+.title {
+  margin: 0;
+  color: #111827;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.subtitle {
+  margin: 0.85rem 0 1.4rem;
+  color: #374151;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.cta {
+  display: inline-block;
+  padding: 0.8rem 1.25rem;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1f7a3f 0%, #1aa057 100%);
+  box-shadow: 0 12px 25px rgba(26, 160, 87, 0.28);
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 15px 28px rgba(26, 160, 87, 0.35);
+  filter: saturate(1.05);
+}
+
+.cta:focus-visible {
+  outline: 3px solid #90cdf4;
+  outline-offset: 2px;
+}
+
+.privacy {
+  margin: 1rem 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .card {
+    padding: 1.5rem 1.2rem;
+    border-radius: 0.85rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .subtitle {
+    margin: 0.75rem 0 1.2rem;
+    font-size: 0.95rem;
+  }
+
+  .cta {
+    width: 100%;
+    padding: 0.78rem 1rem;
+  }
+}

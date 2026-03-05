@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { exchangeCodeForTokens, fetchSpotifyMe } from '@/lib/spotify/oauth';
+import {
+  buildTokenExchangeFailedLogMeta,
+  buildTokenExchangeFailedPayload,
+  resolveTokenExchangeFailedStatus,
+  buildFetchProfileFailedLogMeta,
+  buildFetchProfileFailedPayload,
+  resolveFetchProfileFailedStatus,
+} from '@/lib/spotify/callback-errors';
+import { getMissingScopes, SPOTIFY_PROFILE_SCOPES } from '@/lib/spotify/scopes';
 import { setSessionCookie } from '@/lib/session';
 import { upsertUserAndTokens } from '@/server/services/auth.service';
+
+export const runtime = 'nodejs';
 
 const CLEAR_COOKIE_OPTIONS = {
   httpOnly: true as const,
@@ -17,6 +28,7 @@ export async function GET(request: Request) {
   const state = searchParams.get('state');
 
   const cookieStore = cookies();
+  const isProduction = process.env.NODE_ENV === 'production';
 
   let clientId: string;
   let redirectUri: string;
@@ -49,19 +61,38 @@ export async function GET(request: Request) {
   try {
     tokens = await exchangeCodeForTokens(code, codeVerifier, redirectUri, clientId);
   } catch (e) {
+    console.error('[callback] token exchange failed', buildTokenExchangeFailedLogMeta(e));
     return NextResponse.json(
-      { error: 'TOKEN_EXCHANGE_FAILED' },
-      { status: 401 }
+      buildTokenExchangeFailedPayload(e, isProduction),
+      { status: resolveTokenExchangeFailedStatus(e, isProduction) }
     );
+  }
+
+  console.info('[callback] token exchange success', {
+    hasAccessToken: Boolean(tokens.access_token),
+    tokenType: tokens.token_type,
+    expiresIn: tokens.expires_in,
+    scope: tokens.scope ?? null,
+  });
+
+  if (typeof tokens.scope === 'string' && tokens.scope.trim()) {
+    const missingScopes = getMissingScopes(tokens.scope, SPOTIFY_PROFILE_SCOPES);
+    if (missingScopes.length > 0) {
+      console.warn('[callback] token scopes missing required profile scopes', {
+        grantedScopes: tokens.scope,
+        missingScopes,
+      });
+    }
   }
 
   let profile;
   try {
     profile = await fetchSpotifyMe(tokens.access_token);
-  } catch {
+  } catch (err) {
+    console.error('[callback] fetch profile failed', buildFetchProfileFailedLogMeta(err));
     return NextResponse.json(
-      { error: 'FETCH_PROFILE_FAILED' },
-      { status: 500 }
+      buildFetchProfileFailedPayload(err, isProduction),
+      { status: resolveFetchProfileFailedStatus(err, isProduction) }
     );
   }
 
@@ -76,11 +107,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const isProd = process.env.NODE_ENV === 'production';
   const res = NextResponse.redirect(new URL('/dashboard', request.url), 302);
 
-  res.cookies.set('spotify_code_verifier', '', { ...CLEAR_COOKIE_OPTIONS, secure: isProd });
-  res.cookies.set('oauth_state', '', { ...CLEAR_COOKIE_OPTIONS, secure: isProd });
+  res.cookies.set('spotify_code_verifier', '', { ...CLEAR_COOKIE_OPTIONS, secure: isProduction });
+  res.cookies.set('oauth_state', '', { ...CLEAR_COOKIE_OPTIONS, secure: isProduction });
 
   await setSessionCookie(res, nguoiDungId);
 

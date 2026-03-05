@@ -1,21 +1,22 @@
+import styles from './page.module.css';
+
 export default function HomePage() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "column",
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-      }}
-    >
-      <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-        AlbumPulse
-      </h1>
-      <p style={{ color: "#666" }}>
-        Next.js app is running. Spotify + database setup comes next.
-      </p>
+    <main className={styles.page}>
+      <section className={styles.card}>
+        <h1 className={styles.title}>AlbumPulse</h1>
+        <p className={styles.subtitle}>
+          Discover album picks shaped by your Spotify listening habits.
+        </p>
+
+        <a className={styles.cta} href="/api/auth/login" aria-label="Continue with Spotify">
+          Continue with Spotify
+        </a>
+
+        <p className={styles.privacy}>
+          We store only minimal data needed to sign in and personalize recommendations.
+        </p>
+      </section>
     </main>
   );
 }

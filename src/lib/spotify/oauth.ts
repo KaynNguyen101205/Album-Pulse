@@ -43,6 +43,18 @@ export function base64urlEncode(input: ArrayBuffer | Uint8Array): string {
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const SPOTIFY_ME_URL = 'https://api.spotify.com/v1/me';
 
+export class SpotifyOAuthError extends Error {
+  status: number;
+  details?: unknown;
+
+  constructor(message: string, status: number, details?: unknown) {
+    super(message);
+    this.name = 'SpotifyOAuthError';
+    this.status = status;
+    this.details = details;
+  }
+}
+
 export type TokenResponse = {
   access_token: string;
   refresh_token?: string;
@@ -50,6 +62,51 @@ export type TokenResponse = {
   token_type: string;
   scope?: string;
 };
+
+async function safeParseOAuthError(res: Response): Promise<unknown> {
+  const contentType = res.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    try {
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  try {
+    const text = await res.text();
+    return text || null;
+  } catch {
+    return null;
+  }
+}
+
+function extractOAuthErrorMessage(details: unknown, fallback: string): string {
+  if (!details) return fallback;
+
+  if (typeof details === 'string' && details.trim()) {
+    return details;
+  }
+
+  if (typeof details === 'object') {
+    const record = details as Record<string, unknown>;
+    const fromDescription = record.error_description;
+    if (typeof fromDescription === 'string' && fromDescription.trim()) {
+      return fromDescription;
+    }
+    const fromError = record.error;
+    if (typeof fromError === 'string' && fromError.trim()) {
+      return fromError;
+    }
+  }
+
+  return fallback;
+}
+
+function buildOAuthError(prefix: string, status: number, details: unknown): SpotifyOAuthError {
+  const message = extractOAuthErrorMessage(details, `${prefix} failed with status ${status}`);
+  return new SpotifyOAuthError(message, status, details);
+}
 
 export async function refreshAccessToken(
   refreshToken: string,
@@ -68,8 +125,8 @@ export async function refreshAccessToken(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Spotify token refresh failed: ${res.status} ${text}`);
+    const details = await safeParseOAuthError(res);
+    throw buildOAuthError('Spotify token refresh', res.status, details);
   }
 
   return res.json() as Promise<TokenResponse>;
@@ -96,8 +153,8 @@ export async function exchangeCodeForTokens(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Spotify token exchange failed: ${res.status} ${text}`);
+    const details = await safeParseOAuthError(res);
+    throw buildOAuthError('Spotify token exchange', res.status, details);
   }
 
   return res.json() as Promise<TokenResponse>;

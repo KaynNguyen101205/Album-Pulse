@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
-import { SpotifyApiError } from '@/lib/spotify/types';
-import { generateAndPersistRecommendations } from '@/server/services/recommend.service';
+
+import {
+  getRecommendationRunById,
+  RecommendationRunNotFoundError,
+} from '@/server/services/recommend.service';
 import { NotLoggedInError } from '@/server/services/spotify.service';
 
-export async function GET() {
+export async function GET(_request: Request, context: { params: { runId: string } }) {
   try {
-    const result = await generateAndPersistRecommendations();
+    const result = await getRecommendationRunById(context.params.runId);
 
     return NextResponse.json({
       ok: true,
-      dotGoiYId: result.dotGoiYId,
+      run: result.run,
       items: result.items,
     });
   } catch (err) {
@@ -17,11 +20,8 @@ export async function GET() {
       return NextResponse.json({ error: 'not_logged_in' }, { status: 401 });
     }
 
-    if (err instanceof SpotifyApiError) {
-      return NextResponse.json(
-        { error: err.code, status: err.status, details: err.details },
-        { status: err.status }
-      );
+    if (err instanceof RecommendationRunNotFoundError) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
 
     return NextResponse.json({ error: 'unexpected', message: String(err) }, { status: 500 });

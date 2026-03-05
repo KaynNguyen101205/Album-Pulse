@@ -42,15 +42,23 @@ jobs:
             npm install
           fi
 
+      - name: Check DATABASE_URL
+        id: check_db
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -n "${DATABASE_URL}" ]; then
+            echo "has_db_url=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_db_url=false" >> $GITHUB_OUTPUT
+            echo "::warning::DATABASE_URL secret is missing. Skipping prisma migrate deploy."
+          fi
+
       - name: Generate Prisma Client
         run: npx prisma generate
 
       - name: Run Prisma migrations
-        run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "DATABASE_URL secret not set; skipping migrate deploy."
-            exit 0
-          fi
-          npx prisma migrate deploy
+        if: steps.check_db.outputs.has_db_url == 'true'
+        run: npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
