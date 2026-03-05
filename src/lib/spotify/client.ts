@@ -33,7 +33,8 @@ export async function safeJson(res: Response): Promise<unknown | null> {
   try {
     return JSON.parse(text);
   } catch {
-    return null;
+    // Fall back to raw text so callers can log/debug non-JSON responses
+    return text;
   }
 }
 
