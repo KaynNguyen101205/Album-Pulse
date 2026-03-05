@@ -10,6 +10,7 @@ import {
   type SpotifyTopArtistsResponse,
   type SpotifyRecentlyPlayedResponse,
   type SpotifyArtistAlbumsResponse,
+  type SpotifyAlbum,
   type SpotifyImage,
 } from '@/lib/spotify/types';
 
@@ -261,5 +262,21 @@ export async function fetchCandidateAlbums(
   return Array.from(allAlbums.values());
 }
 
+/**
+ * Fetch a single album by Spotify ID. Used e.g. to populate Album in DB when adding a favorite.
+ */
+export async function fetchAlbumById(
+  accessToken: string,
+  albumSpotifyId: string
+): Promise<SpotifyAlbum> {
+  return spotifyGet<SpotifyAlbum>(`/albums/${albumSpotifyId}`, accessToken);
+}
+
+/** Pick best image URL (prefer largest / 300px+). */
+export function pickBestAlbumImageUrl(images?: SpotifyImage[]): string | null {
+  if (!images || images.length === 0) return null;
+  const url = pickBestImageUrl(images);
+  return url ?? null;
+}
 
 

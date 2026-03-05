@@ -47,6 +47,7 @@ export type SpotifyAlbum = {
   id: string;
   name: string;
   release_date: string;
+  uri?: string;
   artists: SpotifyArtist[];
   images?: SpotifyImage[];
   external_urls?: {
