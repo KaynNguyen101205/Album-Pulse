@@ -46,6 +46,11 @@ jobs:
         run: npx prisma generate
 
       - name: Run Prisma migrations
-        run: npx prisma migrate deploy
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL secret not set; skipping migrate deploy."
+            exit 0
+          fi
+          npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
