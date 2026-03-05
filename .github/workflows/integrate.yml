@@ -8,7 +8,6 @@ on:
 
 jobs:
   integrate:
-    if: hashFiles('package.json') != ''
     runs-on: ubuntu-latest
 
     steps:

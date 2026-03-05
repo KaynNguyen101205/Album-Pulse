@@ -8,8 +8,6 @@ on:
 
 jobs:
   migrate:
-    # Only run when the project has dependencies (and Prisma)
-    if: hashFiles('package.json') != ''
     runs-on: ubuntu-latest
 
     steps:

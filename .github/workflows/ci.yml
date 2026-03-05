@@ -8,8 +8,6 @@ on:
 
 jobs:
   ci:
-    # Skip the job entirely if there is no package.json yet
-    if: hashFiles('package.json') != ''
     runs-on: ubuntu-latest
 
     steps:
