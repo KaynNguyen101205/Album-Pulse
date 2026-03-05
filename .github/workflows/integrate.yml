@@ -1,4 +1,3 @@
-# Integration check on main (valid workflow; do not use fromFile - not supported in GitHub Actions)
 name: Integrate (main)
 
 on:
