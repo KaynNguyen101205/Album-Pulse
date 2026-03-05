@@ -1,6 +1,18 @@
 import styles from './page.module.css';
 
-export default function HomePage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  FETCH_PROFILE_FAILED:
+    "We couldn't load your Spotify profile. Please try again.",
+  TOKEN_EXCHANGE_FAILED:
+    "We couldn't complete sign-in with Spotify. Please try again.",
+};
+
+type HomePageProps = { searchParams: { error?: string } };
+
+export default function HomePage({ searchParams }: HomePageProps) {
+  const { error } = searchParams;
+  const message = error ? ERROR_MESSAGES[error] ?? 'Something went wrong. Please try again.' : null;
+
   return (
     <main className={styles.page}>
       <section className={styles.card}>
@@ -9,8 +21,14 @@ export default function HomePage() {
           Discover album picks shaped by your Spotify listening habits.
         </p>
 
+        {message && (
+          <p className={styles.errorMessage} role="alert">
+            {message}
+          </p>
+        )}
+
         <a className={styles.cta} href="/api/auth/login" aria-label="Continue with Spotify">
-          Continue with Spotify
+          {message ? 'Try again with Spotify' : 'Continue with Spotify'}
         </a>
 
         <p className={styles.privacy}>

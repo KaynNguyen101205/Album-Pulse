@@ -64,9 +64,8 @@ export function buildFetchProfileFailedLogMeta(err: unknown): Record<string, unk
 
 export function resolveFetchProfileFailedStatus(
   err: unknown,
-  isProduction: boolean
+  _isProduction: boolean
 ): number {
-  if (isProduction) return 500;
   if (err instanceof SpotifyApiError) {
     return err.status;
   }

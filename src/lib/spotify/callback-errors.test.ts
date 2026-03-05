@@ -66,7 +66,7 @@ describe('callback profile error payload', () => {
     });
   });
 
-  it('maps fetch profile status: pass-through in dev, force 500 in prod', () => {
+  it('maps fetch profile status: pass-through in dev and prod (401/403/500)', () => {
     const err = new SpotifyApiError({
       code: 'unauthorized',
       status: 401,
@@ -74,7 +74,11 @@ describe('callback profile error payload', () => {
     });
 
     expect(resolveFetchProfileFailedStatus(err, false)).toBe(401);
-    expect(resolveFetchProfileFailedStatus(err, true)).toBe(500);
+    expect(resolveFetchProfileFailedStatus(err, true)).toBe(401);
+  });
+
+  it('returns 500 for non-SpotifyApiError', () => {
+    expect(resolveFetchProfileFailedStatus(new Error('network'), true)).toBe(500);
   });
 });
 

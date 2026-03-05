@@ -6,8 +6,6 @@ import {
   buildTokenExchangeFailedPayload,
   resolveTokenExchangeFailedStatus,
   buildFetchProfileFailedLogMeta,
-  buildFetchProfileFailedPayload,
-  resolveFetchProfileFailedStatus,
 } from '@/lib/spotify/callback-errors';
 import { getMissingScopes, SPOTIFY_PROFILE_SCOPES } from '@/lib/spotify/scopes';
 import { setSessionCookie } from '@/lib/session';
@@ -85,15 +83,19 @@ export async function GET(request: Request) {
     }
   }
 
+  const profileEndpoint = 'https://api.spotify.com/v1/me';
   let profile;
   try {
     profile = await fetchSpotifyMe(tokens.access_token);
   } catch (err) {
-    console.error('[callback] fetch profile failed', buildFetchProfileFailedLogMeta(err));
-    return NextResponse.json(
-      buildFetchProfileFailedPayload(err, isProduction),
-      { status: resolveFetchProfileFailedStatus(err, isProduction) }
-    );
+    console.error('[callback] fetch profile failed', {
+      endpoint: profileEndpoint,
+      ...buildFetchProfileFailedLogMeta(err),
+    });
+    // Redirect to landing with error so user sees a message instead of raw JSON
+    const landingUrl = new URL('/', request.url);
+    landingUrl.searchParams.set('error', 'FETCH_PROFILE_FAILED');
+    return NextResponse.redirect(landingUrl, 302);
   }
 
   let nguoiDungId: string;
