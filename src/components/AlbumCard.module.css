@@ -78,7 +78,6 @@
 
 .link {
   width: fit-content;
-  margin-top: 0.18rem;
   color: #116537;
   text-decoration: none;
   font-size: 0.83rem;
@@ -87,4 +86,58 @@
 
 .link:hover {
   text-decoration: underline;
+}
+
+.actions {
+  margin-top: 0.22rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.favoriteActionButton {
+  border-radius: 0.65rem;
+  padding: 0.38rem 0.68rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.favoriteActionButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.favoriteActionButton:focus-visible {
+  outline-offset: 2px;
+}
+
+.saveButton {
+  border: 1px solid #16a34a;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.saveButton:focus-visible {
+  outline: 2px solid #86efac;
+}
+
+.removeButton {
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.removeButton:focus-visible {
+  outline: 2px solid #fca5a5;
+}
+
+.actionError {
+  margin: 0.2rem 0 0;
+  color: #b91c1c;
+  font-size: 0.78rem;
+  line-height: 1.34;
 }

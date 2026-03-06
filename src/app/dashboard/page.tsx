@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import AlbumCard from '@/components/AlbumCard';
 import EmptyState from '@/components/EmptyState';
 import FilterBar, { type SortFilter, type TimeRangeFilter } from '@/components/FilterBar';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
+import { fetchFavorites as fetchFavoriteAlbums } from '@/lib/favorites/client';
 
 import styles from './page.module.css';
 
@@ -41,6 +42,7 @@ type SuggestResponse = {
 
 type DashboardItem = {
   id: string;
+  albumSpotifyId: string | null;
   title: string;
   artistName: string;
   coverUrl: string | null;
@@ -70,6 +72,7 @@ function normalizeItems(items: ApiRecommendationItem[] | undefined): DashboardIt
 
   return items.map((item, index) => {
     const album = item.album ?? {};
+    const albumSpotifyId = toStringOrNull(album.spotifyId);
     const title = toStringOrNull(album.name) ?? toStringOrNull(album.ten) ?? 'Unknown album';
     const artistName = toStringOrNull(album.artistName) ?? 'Unknown artist';
     const coverFromImages = Array.isArray(album.images)
@@ -77,10 +80,8 @@ function normalizeItems(items: ApiRecommendationItem[] | undefined): DashboardIt
       : null;
 
     return {
-      id:
-        toStringOrNull(album.spotifyId) ??
-        toStringOrNull(album.id) ??
-        `recommendation-${index + 1}`,
+      id: albumSpotifyId ?? toStringOrNull(album.id) ?? `recommendation-${index + 1}`,
+      albumSpotifyId,
       title,
       artistName,
       coverUrl: coverFromImages ?? toStringOrNull(album.anhBiaUrl),
@@ -110,6 +111,32 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [favoriteSpotifyIds, setFavoriteSpotifyIds] = useState<Set<string>>(new Set());
+
+  const refreshFavorites = useCallback(async () => {
+    try {
+      const favorites = await fetchFavoriteAlbums();
+      setFavoriteSpotifyIds(new Set(favorites.map((item) => item.spotifyId)));
+    } catch (error) {
+      console.error('Failed to refresh favorites', error);
+    }
+  }, []);
+
+  const handleFavoriteStateSync = useCallback((albumSpotifyId: string, isFavorite: boolean) => {
+    setFavoriteSpotifyIds((prev) => {
+      const next = new Set(prev);
+      if (isFavorite) {
+        next.add(albumSpotifyId);
+      } else {
+        next.delete(albumSpotifyId);
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    void refreshFavorites();
+  }, [refreshFavorites]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -217,6 +244,7 @@ export default function DashboardPage() {
           {sortedItems.map((item) => (
             <AlbumCard
               key={item.id}
+              albumSpotifyId={item.albumSpotifyId}
               title={item.title}
               artistName={item.artistName}
               coverUrl={item.coverUrl}
@@ -225,6 +253,12 @@ export default function DashboardPage() {
               reason={item.reason}
               rank={item.rank}
               spotifyUrl={item.spotifyUrl}
+              initialIsFavorite={
+                item.albumSpotifyId ? favoriteSpotifyIds.has(item.albumSpotifyId) : false
+              }
+              enableFavoriteActions={Boolean(item.albumSpotifyId)}
+              onFavoriteStateSync={handleFavoriteStateSync}
+              onRequestFavoritesRefetch={refreshFavorites}
             />
           ))}
         </section>

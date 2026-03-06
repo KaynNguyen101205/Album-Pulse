@@ -2,8 +2,22 @@
 
 import { useEffect, useState } from 'react';
 
-import { fetchFavorites, removeFavorite, type Favorite } from './favorites.api';
+import { fetchFavorites, removeFavorite } from '@/lib/favorites/client';
 import styles from './page.module.css';
+
+type Favorite = {
+  id: string;
+  title: string;
+};
+
+type FavoriteApiItems = Awaited<ReturnType<typeof fetchFavorites>>;
+
+function normalizeFavorites(items: FavoriteApiItems): Favorite[] {
+  return items.map((item) => ({
+    id: item.spotifyId,
+    title: item.ten ?? item.spotifyId,
+  }));
+}
 
 type FavoriteItemProps = {
   item: Favorite;
@@ -42,7 +56,7 @@ export default function FavoritesPage() {
 
       try {
         const favorites = await fetchFavorites(controller.signal);
-        setItems(favorites);
+        setItems(normalizeFavorites(favorites));
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
         setErrorMessage('Failed to load favorites');
