@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "db:verify": "tsx scripts/verify-crud.ts"
+    "db:verify": "npx tsx scripts/verify-crud.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",

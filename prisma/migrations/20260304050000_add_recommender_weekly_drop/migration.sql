@@ -1,5 +1,5 @@
 -- AlbumPulse: Recommender + Weekly Drops (post-Spotify pivot)
--- Requires pgvector for AlbumEmbedding.extension (enable if not already).
+-- Runs AFTER init + oauth migrations. Requires pgvector for AlbumEmbedding.
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
