@@ -8,6 +8,7 @@ import {
   buildFetchProfileFailedLogMeta,
 } from '@/lib/spotify/callback-errors';
 import { getMissingScopes, SPOTIFY_PROFILE_SCOPES } from '@/lib/spotify/scopes';
+import { prisma } from '@/lib/prisma';
 import { setSessionCookie } from '@/lib/session';
 import { upsertUserAndTokens } from '@/server/services/auth.service';
 
@@ -109,7 +110,12 @@ export async function GET(request: Request) {
     );
   }
 
-  const res = NextResponse.redirect(new URL('/dashboard', request.url), 302);
+  const onboardingStatus = await prisma.nguoiDung.findUnique({
+    where: { id: nguoiDungId },
+    select: { onboardingCompletedAt: true },
+  });
+  const redirectPath = onboardingStatus?.onboardingCompletedAt ? '/dashboard' : '/onboarding';
+  const res = NextResponse.redirect(new URL(redirectPath, request.url), 302);
 
   res.cookies.set('spotify_code_verifier', '', { ...CLEAR_COOKIE_OPTIONS, secure: isProduction });
   res.cookies.set('oauth_state', '', { ...CLEAR_COOKIE_OPTIONS, secure: isProduction });

@@ -1,0 +1,25 @@
+.wrap {
+  margin-bottom: 0.95rem;
+}
+
+.label {
+  margin: 0;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.track {
+  margin-top: 0.45rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
+  transition: width 180ms ease-out;
+}

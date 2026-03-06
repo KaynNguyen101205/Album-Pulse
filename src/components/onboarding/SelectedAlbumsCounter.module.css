@@ -1,0 +1,27 @@
+.counter {
+  margin-top: 0.9rem;
+  border-radius: 0.8rem;
+  border: 1px solid #d5deea;
+  padding: 0.72rem 0.82rem;
+}
+
+.pending {
+  background: #f8fafc;
+}
+
+.ready {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.text {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.hint {
+  margin: 0.35rem 0 0;
+  color: #475569;
+  font-size: 0.8rem;
+}

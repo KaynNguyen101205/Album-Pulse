@@ -1,0 +1,65 @@
+.wrap {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.block {
+  border: 1px solid #d9e2ee;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  padding: 0.82rem;
+}
+
+.title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.inputRow {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.input {
+  border: 1px solid #d2dce8;
+  border-radius: 0.66rem;
+  padding: 0.55rem 0.66rem;
+  font-size: 0.9rem;
+}
+
+.addButton {
+  border: 1px solid #1d4ed8;
+  border-radius: 0.66rem;
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 0.38rem 0.6rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chips {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chip {
+  border: 1px solid #c5d4ea;
+  border-radius: 999px;
+  background: #f8fbff;
+  color: #1e3a8a;
+  padding: 0.28rem 0.52rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.helper {
+  margin: 0.55rem 0 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}

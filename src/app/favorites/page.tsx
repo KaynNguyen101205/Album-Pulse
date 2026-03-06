@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import ErrorNotice from '@/components/ErrorNotice';
 import { fetchFavorites, removeFavorite } from '@/lib/favorites/client';
@@ -13,6 +14,7 @@ type Favorite = {
 
 type FavoriteApiItems = Awaited<ReturnType<typeof fetchFavorites>>;
 type FavoritesLoadState = 'loading' | 'success' | 'empty' | 'error';
+type OnboardingGateState = 'checking' | 'allowed' | 'error';
 
 function normalizeFavorites(items: FavoriteApiItems): Favorite[] {
   return items.map((item) => ({
@@ -44,12 +46,40 @@ function FavoriteItem({ item, onRemove, isRemoving = false }: FavoriteItemProps)
 }
 
 export default function FavoritesPage() {
+  const router = useRouter();
   const [items, setItems] = useState<Favorite[]>([]);
   const [loadState, setLoadState] = useState<FavoritesLoadState>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
+  const [onboardingGateState, setOnboardingGateState] = useState<OnboardingGateState>('checking');
+  const [onboardingGateError, setOnboardingGateError] = useState<string | null>(null);
+
+  const checkOnboardingStatus = useCallback(async () => {
+    setOnboardingGateState('checking');
+    setOnboardingGateError(null);
+    try {
+      const response = await fetch('/api/onboarding/status', { cache: 'no-store' });
+      const payload = (await response.json()) as { isComplete?: boolean; error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Failed to verify onboarding state.');
+      }
+
+      if (!payload?.isComplete) {
+        router.replace('/onboarding');
+        return;
+      }
+
+      setOnboardingGateState('allowed');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to verify onboarding state.';
+      setOnboardingGateError(message);
+      setOnboardingGateState('error');
+    }
+  }, [router]);
 
   const loadFavorites = useCallback(async () => {
+    if (onboardingGateState !== 'allowed') return;
     setLoadState('loading');
     setErrorMessage(null);
 
@@ -63,11 +93,16 @@ export default function FavoritesPage() {
       setErrorMessage('Failed to load favorites');
       setLoadState('error');
     }
-  }, []);
+  }, [onboardingGateState]);
 
   useEffect(() => {
+    void checkOnboardingStatus();
+  }, [checkOnboardingStatus]);
+
+  useEffect(() => {
+    if (onboardingGateState !== 'allowed') return;
     void loadFavorites();
-  }, [loadFavorites]);
+  }, [loadFavorites, onboardingGateState]);
 
   async function handleRemove(id: string) {
     setRemovingIds((prev) => {
@@ -101,7 +136,17 @@ export default function FavoritesPage() {
         <h1 className={styles.title}>Favorites</h1>
       </header>
 
-      {loadState === 'loading' ? (
+      {onboardingGateState === 'checking' ? (
+        <section className={styles.stateBox} aria-busy="true">
+          Loading favorites...
+        </section>
+      ) : onboardingGateState === 'error' ? (
+        <ErrorNotice
+          className={styles.errorWrap}
+          message={onboardingGateError ?? 'Failed to verify onboarding state.'}
+          onRetry={checkOnboardingStatus}
+        />
+      ) : loadState === 'loading' ? (
         <section className={styles.stateBox} aria-busy="true">
           Loading favorites...
         </section>

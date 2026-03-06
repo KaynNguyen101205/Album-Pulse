@@ -6,6 +6,8 @@ const SESSION_COOKIE_NAME = 'album_pulse_session';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isProtected =
+    pathname === '/onboarding' ||
+    pathname.startsWith('/onboarding/') ||
     pathname === '/dashboard' ||
     pathname.startsWith('/dashboard/') ||
     pathname === '/favorites' ||
@@ -22,5 +24,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard', '/dashboard/:path*', '/favorites', '/favorites/:path*'],
+  matcher: ['/onboarding', '/onboarding/:path*', '/dashboard', '/dashboard/:path*', '/favorites', '/favorites/:path*'],
 };

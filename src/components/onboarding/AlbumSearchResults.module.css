@@ -1,0 +1,24 @@
+.stateBox {
+  margin-top: 0.9rem;
+  border: 1px dashed #cdd7e4;
+  border-radius: 0.9rem;
+  background: #f8fbff;
+  padding: 0.95rem;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.grid {
+  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.3rem, 1fr));
+  gap: 0.78rem;
+}
+
+.errorWrap {
+  margin-top: 0.9rem;
+}
+
+.emptyText {
+  margin: 0;
+}

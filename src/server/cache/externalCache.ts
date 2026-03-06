@@ -32,12 +32,12 @@ function setMemory(key: string, value: unknown, ttlSeconds: number): void {
     // Evict oldest entry
     let oldestKey: string | null = null;
     let oldestCreatedAt = Number.POSITIVE_INFINITY;
-    for (const [k, entry] of memoryCache.entries()) {
+    memoryCache.forEach((entry, k) => {
       if (entry.createdAt < oldestCreatedAt) {
         oldestCreatedAt = entry.createdAt;
         oldestKey = k;
       }
-    }
+    });
     if (oldestKey) {
       memoryCache.delete(oldestKey);
     }
@@ -145,4 +145,3 @@ export function getCacheMetrics() {
     size: memoryCache.size,
   };
 }
-

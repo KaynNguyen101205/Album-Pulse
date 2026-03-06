@@ -1,0 +1,20 @@
+.button {
+  border: 1px solid #166534;
+  border-radius: 0.72rem;
+  background: linear-gradient(140deg, #15803d 0%, #22c55e 100%);
+  color: #ffffff;
+  padding: 0.58rem 0.92rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button:focus-visible {
+  outline: 2px solid #86efac;
+  outline-offset: 2px;
+}

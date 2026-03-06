@@ -1,0 +1,44 @@
+.wrap {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.label {
+  margin: 0;
+  color: #334155;
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.input {
+  border: 1px solid #d3dce8;
+  border-radius: 0.68rem;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0.58rem 0.68rem;
+  font-size: 0.9rem;
+}
+
+.addButton {
+  justify-self: start;
+  border: 1px solid #1d4ed8;
+  border-radius: 0.65rem;
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 0.4rem 0.66rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.8rem;
+}

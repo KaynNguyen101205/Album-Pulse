@@ -1,0 +1,70 @@
+.card {
+  border: 1px solid #dbe4ef;
+  border-radius: 0.95rem;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.coverWrap {
+  aspect-ratio: 1 / 1;
+  background: #dbe6f2;
+}
+
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coverFallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.body {
+  padding: 0.72rem;
+  display: grid;
+  gap: 0.33rem;
+}
+
+.title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.94rem;
+  line-height: 1.34;
+}
+
+.meta {
+  margin: 0;
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+.toggleButton {
+  margin-top: 0.4rem;
+  border-radius: 0.65rem;
+  padding: 0.38rem 0.62rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addMode {
+  border: 1px solid #16a34a;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.removeMode {
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  background: #fef2f2;
+}

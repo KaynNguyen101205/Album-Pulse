@@ -15,6 +15,10 @@ export type MusicBrainzReleaseGroup = {
   id: string;
   title: string;
   'first-release-date'?: string;
+  releases?: Array<{
+    id: string;
+    date?: string;
+  }>;
   'artist-credit'?: Array<{
     name: string;
     artist?: { id?: string };
@@ -150,4 +154,3 @@ export async function getReleaseGroupWithCache(
     return data;
   });
 }
-

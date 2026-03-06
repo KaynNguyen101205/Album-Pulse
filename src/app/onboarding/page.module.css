@@ -1,0 +1,109 @@
+.loadingBox {
+  border: 1px solid #d7e2ef;
+  border-radius: 0.9rem;
+  background: #f8fbff;
+  color: #1f2f43;
+  padding: 0.95rem;
+  font-size: 0.93rem;
+}
+
+.stepSection {
+  margin-top: 0.2rem;
+}
+
+.selectedListWrap {
+  margin-top: 0.85rem;
+}
+
+.selectedTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.94rem;
+}
+
+.selectedList {
+  margin: 0.55rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.selectedItem {
+  border: 1px solid #d8e2ef;
+  border-radius: 0.82rem;
+  background: #ffffff;
+  padding: 0.58rem 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.selectedName {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.selectedMeta {
+  margin: 0.18rem 0 0;
+  color: #64748b;
+  font-size: 0.79rem;
+}
+
+.removeButton {
+  border: 1px solid #ef4444;
+  border-radius: 0.62rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 0.3rem 0.58rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.optionalHint {
+  margin: 0.65rem 0 0;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.saveError {
+  margin-top: 0.9rem;
+}
+
+.footer {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.secondaryButton,
+.primaryButton {
+  border-radius: 0.72rem;
+  padding: 0.55rem 0.88rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondaryButton {
+  border: 1px solid #c6d3e5;
+  background: #f8fbff;
+  color: #1e3a8a;
+}
+
+.primaryButton {
+  border: 1px solid #166534;
+  background: linear-gradient(140deg, #15803d 0%, #22c55e 100%);
+  color: #ffffff;
+}
+
+.secondaryButton:disabled,
+.primaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

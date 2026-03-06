@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import AlbumCard from '@/components/AlbumCard';
 import EmptyState from '@/components/EmptyState';
@@ -55,6 +56,7 @@ type DashboardItem = {
 };
 
 type DashboardLoadState = 'loading' | 'success' | 'empty' | 'error';
+type OnboardingGateState = 'checking' | 'allowed' | 'error';
 
 function toNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
@@ -107,6 +109,7 @@ function buildErrorMessage(status: number, payload: SuggestResponse | null): str
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [timeRange, setTimeRange] = useState<TimeRangeFilter>('medium_term');
   const [sort, setSort] = useState<SortFilter>('score');
   const [items, setItems] = useState<DashboardItem[]>([]);
@@ -115,6 +118,8 @@ export default function DashboardPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
   const [favoriteSpotifyIds, setFavoriteSpotifyIds] = useState<Set<string>>(new Set());
+  const [onboardingGateState, setOnboardingGateState] = useState<OnboardingGateState>('checking');
+  const [onboardingGateError, setOnboardingGateError] = useState<string | null>(null);
 
   const refreshFavorites = useCallback(async () => {
     try {
@@ -137,15 +142,46 @@ export default function DashboardPage() {
     });
   }, []);
 
+  const checkOnboardingStatus = useCallback(async () => {
+    setOnboardingGateState('checking');
+    setOnboardingGateError(null);
+    try {
+      const response = await fetch('/api/onboarding/status', { cache: 'no-store' });
+      const payload = (await response.json()) as { isComplete?: boolean; error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Failed to verify onboarding state.');
+      }
+
+      if (!payload?.isComplete) {
+        router.replace('/onboarding');
+        return;
+      }
+
+      setOnboardingGateState('allowed');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to verify onboarding state.';
+      setOnboardingGateError(message);
+      setOnboardingGateState('error');
+    }
+  }, [router]);
+
   useEffect(() => {
+    void checkOnboardingStatus();
+  }, [checkOnboardingStatus]);
+
+  useEffect(() => {
+    if (onboardingGateState !== 'allowed') return;
     void refreshFavorites();
-  }, [refreshFavorites]);
+  }, [refreshFavorites, onboardingGateState]);
 
   const retryRecommendations = useCallback(() => {
     setRetryNonce((prev) => prev + 1);
   }, []);
 
   useEffect(() => {
+    if (onboardingGateState !== 'allowed') return;
+
     const controller = new AbortController();
 
     async function loadRecommendations() {
@@ -184,7 +220,7 @@ export default function DashboardPage() {
 
     loadRecommendations();
     return () => controller.abort();
-  }, [timeRange, retryNonce]);
+  }, [timeRange, retryNonce, onboardingGateState]);
 
   const sortedItems = useMemo(() => {
     const sorted = [...items];
@@ -222,12 +258,20 @@ export default function DashboardPage() {
       <FilterBar
         timeRange={timeRange}
         sort={sort}
-        disabled={loadState === 'loading'}
+        disabled={loadState === 'loading' || onboardingGateState !== 'allowed'}
         onTimeRangeChange={setTimeRange}
         onSortChange={setSort}
       />
 
-      {loadState === 'loading' ? (
+      {onboardingGateState === 'checking' ? (
+        <LoadingSkeleton count={6} />
+      ) : onboardingGateState === 'error' ? (
+        <ErrorNotice
+          className={styles.errorWrap}
+          message={onboardingGateError ?? 'Failed to verify onboarding state.'}
+          onRetry={checkOnboardingStatus}
+        />
+      ) : loadState === 'loading' ? (
         <LoadingSkeleton count={9} />
       ) : loadState === 'error' ? (
         <ErrorNotice
