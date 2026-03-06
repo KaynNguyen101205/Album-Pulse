@@ -7,171 +7,215 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum TimeRangeSpotify {
-  SHORT_TERM
-  MEDIUM_TERM
-  LONG_TERM
+enum AlbumSource {
+  MUSICBRAINZ
+  LASTFM
+  MANUAL
 }
 
-enum NguonGoiY {
-  TOP
-  RECENT
-  MIX
+enum WeeklyDropStatus {
+  ACTIVE
+  EXPIRED
 }
 
-enum DoChinhXacNgayPhatHanh {
-  YEAR
-  MONTH
-  DAY
+enum UserEventType {
+  LIKE
+  DISLIKE
+  SAVE
+  UNSAVE
+  SKIP
+  VIEW
 }
 
-model NguoiDung {
-  id                   String   @id @default(cuid())
-  spotifyId            String   @unique
-  tenHienThi           String?
-  email                String?  @unique
-  anhDaiDienUrl        String?
-  quocGia              String?
-  product              String?
-  onboardingCompletedAt DateTime?
+model User {
+  id        String   @id
+  email     String?  @unique
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  oAuthToken           OAuthToken?
-  phienDangNhap        PhienDangNhap[]
-  yeuThich             YeuThichAlbum[]
-  dotGoiY              DotGoiY[]
-  caiDat               CaiDatNguoiDung?
+  sessions           Session[]
+  favoriteAlbums     UserFavoriteAlbum[]
+  ratings            AlbumRating[]
+  reviews            AlbumReview[]
+  events             UserEvent[]
+  weeklyDrops        WeeklyDrop[]
 }
 
-model OAuthToken {
-  id            String   @id @default(cuid())
-  nguoiDungId   String   @unique
-  accessToken   String
-  refreshToken  String
-  expiresAt     DateTime
-  scope         String?
-  tokenType     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-  nguoiDung     NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
-}
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-model PhienDangNhap {
-  id          String   @id @default(cuid())
-  nguoiDungId String
-  expiresAt   DateTime
-
-  createdAt   DateTime @default(now())
-
-  nguoiDung   NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
-
-  @@index([nguoiDungId])
+  @@index([userId])
   @@index([expiresAt])
 }
 
-model CaiDatNguoiDung {
-  id               String           @id @default(cuid())
-  nguoiDungId      String           @unique
-  soLuongGoiY      Int              @default(20)
-  timeRangeMacDinh TimeRangeSpotify @default(MEDIUM_TERM)
-  ngheSiYeuThich   Json?
-  theLoaiYeuThich  Json?
+model Artist {
+  id        String   @id
+  mbid      String?  @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  nguoiDung        NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
+  albums Album[]
 }
 
 model Album {
-  id             String   @id @default(cuid())
-  spotifyId      String   @unique
-  ten            String
-  ngayPhatHanh   String?
-  doChinhXacNgay DoChinhXacNgayPhatHanh?
-  anhBiaUrl      String?
-  spotifyUrl     String?
-  uri            String?
+  id                  String      @id
+  mbid                String      @unique
+  title               String
+  artistId            String
+  releaseYear         Int?
+  coverUrl            String?
+  description         String?
+  source              AlbumSource @default(MUSICBRAINZ)
+  popularityListeners Int?
+  popularityPlaycount Int?
+  popularityScore     Float?
+  createdAt           DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  artist    Artist          @relation(fields: [artistId], references: [id], onDelete: Restrict)
+  tags      AlbumTag[]
+  embedding AlbumEmbedding?
+  favorites UserFavoriteAlbum[]
+  ratings   AlbumRating[]
+  reviews   AlbumReview[]
+  events    UserEvent[]
+  dropItems WeeklyDropItem[]
 
-  ngheSi         AlbumNgheSi[]
-  yeuThich       YeuThichAlbum[]
-  goiY           GoiYAlbum[]
+  @@index([artistId])
+  @@index([releaseYear])
 }
 
-model NgheSi {
-  id          String   @id @default(cuid())
-  spotifyId   String   @unique
-  ten         String
-  anhUrl      String?
+model Tag {
+  id        String   @id
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  album       AlbumNgheSi[]
+  albums AlbumTag[]
 }
 
-model AlbumNgheSi {
-  albumId    String
-  ngheSiId   String
-  viTri      Int?
-
-  album      Album   @relation(fields: [albumId], references: [id], onDelete: Cascade)
-  ngheSi     NgheSi  @relation(fields: [ngheSiId], references: [id], onDelete: Cascade)
-
-  @@id([albumId, ngheSiId])
-  @@index([ngheSiId])
-  @@index([albumId])
-}
-
-model YeuThichAlbum {
-  nguoiDungId String
-  albumId     String
-  createdAt   DateTime @default(now())
-
-  nguoiDung   NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
-  album       Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)
-
-  @@id([nguoiDungId, albumId])
-  @@index([albumId])
-}
-
-model DotGoiY {
-  id          String   @id @default(cuid())
-  nguoiDungId String
-  timeRange   TimeRangeSpotify @default(MEDIUM_TERM)
-  nguon       NguonGoiY        @default(MIX)
-  ghiChu      String?
-  createdAt   DateTime @default(now())
-
-  nguoiDung   NguoiDung @relation(fields: [nguoiDungId], references: [id], onDelete: Cascade)
-  items       GoiYAlbum[]
-
-  @@index([nguoiDungId, createdAt])
-}
-
-model GoiYAlbum {
-  id        String   @id @default(cuid())
-  dotGoiYId String
+model AlbumTag {
   albumId   String
-
-  diem      Float    @default(0)
-  lyDo      String?
-  viTri     Int?
-
+  tagId     String
   createdAt DateTime @default(now())
 
-  dotGoiY   DotGoiY  @relation(fields: [dotGoiYId], references: [id], onDelete: Cascade)
-  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  @@unique([dotGoiYId, albumId])
+  @@id([albumId, tagId])
+  @@index([tagId])
+}
+
+model AlbumEmbedding {
+  id          String   @id
+  albumId     String   @unique
+  embedding   Unsupported("vector(384)")?
+  modelVersion String
+  createdAt   DateTime @default(now())
+
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+}
+
+model UserFavoriteAlbum {
+  id      String   @id
+  userId  String
+  albumId String
+  addedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
+  @@index([userId])
   @@index([albumId])
-  @@index([dotGoiYId])
+}
+
+model AlbumRating {
+  id        String   @id
+  userId    String
+  albumId   String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
+  @@index([userId])
+  @@index([albumId])
+}
+
+model AlbumReview {
+  id        String   @id
+  userId    String
+  albumId   String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
+  @@index([userId])
+  @@index([albumId])
+}
+
+model UserEvent {
+  id        String        @id
+  userId    String
+  albumId   String?
+  type      UserEventType
+  metadata  Json?
+  createdAt DateTime      @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album Album? @relation(fields: [albumId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([albumId])
+}
+
+model WeeklyDrop {
+  id        String           @id
+  userId    String
+  weekStart DateTime        @db.Date
+  status    WeeklyDropStatus @default(ACTIVE)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items WeeklyDropItem[]
+
+  @@unique([userId, weekStart])
+  @@index([userId])
+  @@index([weekStart])
+}
+
+model WeeklyDropItem {
+  id          String   @id
+  weeklyDropId String
+  albumId     String
+  rank        Int
+  reason      Json?
+  createdAt   DateTime @default(now())
+
+  weeklyDrop WeeklyDrop @relation(fields: [weeklyDropId], references: [id], onDelete: Cascade)
+  album      Album      @relation(fields: [albumId], references: [id], onDelete: Restrict)
+
+  @@unique([weeklyDropId, albumId])
+  @@unique([weeklyDropId, rank])
+  @@index([weeklyDropId])
+  @@index([albumId])
 }
 
 model ExternalCache {

@@ -14,7 +14,9 @@
     "prisma:migrate": "prisma migrate dev",
     "db:verify": "npx tsx scripts/verify-crud.ts",
     "embed:albums": "npx tsx scripts/embed-albums.ts",
-    "inspect:similar": "npx tsx scripts/inspect-similar.ts"
+    "inspect:similar": "npx tsx scripts/inspect-similar.ts",
+    "list:users": "npx tsx scripts/list-users.ts",
+    "seed:test-user": "npx tsx scripts/seed-test-user.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.0",

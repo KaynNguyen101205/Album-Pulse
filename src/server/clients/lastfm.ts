@@ -13,6 +13,7 @@ const LASTFM_BASE_URL = 'https://ws.audioscrobbler.com/2.0/';
 const ALBUM_TTL_SECONDS = 3 * 24 * 60 * 60; // 3d
 const TAG_TOP_TTL_SECONDS = 24 * 60 * 60; // 24h
 const SIMILAR_ARTISTS_TTL_SECONDS = 7 * 24 * 60 * 60; // 7d
+const ARTIST_TOP_ALBUMS_TTL_SECONDS = 7 * 24 * 60 * 60; // 7d
 
 export type LastfmTag = { name?: string };
 
@@ -46,6 +47,17 @@ type LastfmSimilarArtistsResponse = {
     artist?: Array<{
       name?: string;
       mbid?: string;
+    }>;
+  };
+};
+
+type LastfmArtistTopAlbumsResponse = {
+  topalbums?: {
+    album?: Array<{
+      name?: string;
+      artist?: { name?: string; mbid?: string };
+      mbid?: string;
+      image?: Array<{ size?: string; '#text'?: string }>;
     }>;
   };
 };
@@ -140,6 +152,34 @@ export async function getSimilarArtistsWithCache(
         url,
         {},
         { source: 'lastfm', endpoint: 'artist.getSimilar' }
+      );
+
+      return data;
+    }
+  );
+}
+
+export async function getArtistTopAlbumsWithCache(
+  artistName: string,
+  limit = 15
+): Promise<LastfmArtistTopAlbumsResponse> {
+  const cacheKey = `lf:artist-top-albums:${normalizePart(artistName)}:${limit}`;
+
+  return getOrSet<LastfmArtistTopAlbumsResponse>(
+    cacheKey,
+    ARTIST_TOP_ALBUMS_TTL_SECONDS,
+    'lastfm',
+    async () => {
+      const url = buildUrl({
+        method: 'artist.getTopAlbums',
+        artist: artistName,
+        limit: String(limit),
+      });
+
+      const { data } = await fetchJsonWithRetry<LastfmArtistTopAlbumsResponse>(
+        url,
+        {},
+        { source: 'lastfm', endpoint: 'artist.getTopAlbums' }
       );
 
       return data;
