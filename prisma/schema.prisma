@@ -228,3 +228,17 @@ model WeeklyDropItem {
   @@index([weeklyDropId])
   @@index([albumId])
 }
+
+// ---------- External cache for upstream APIs ----------
+model ExternalCache {
+  key         String   @id
+  payloadJson Json
+  source      String
+  ttlSeconds  Int
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([source])
+  @@index([expiresAt])
+}
