@@ -1,0 +1,90 @@
+.card {
+  border: 1px solid #dce5ef;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.coverWrap {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: #dce7f2;
+}
+
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.coverFallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #334155;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.rank {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  background: rgba(15, 23, 42, 0.82);
+  color: #f8fafc;
+  border-radius: 999px;
+  padding: 0.26rem 0.48rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.body {
+  padding: 0.82rem;
+  display: grid;
+  gap: 0.34rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.32;
+  color: #0f172a;
+}
+
+.artist {
+  margin: 0;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.meta {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.reason {
+  margin: 0.1rem 0 0;
+  color: #0f172a;
+  font-size: 0.84rem;
+  line-height: 1.36;
+}
+
+.link {
+  width: fit-content;
+  margin-top: 0.18rem;
+  color: #116537;
+  text-decoration: none;
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

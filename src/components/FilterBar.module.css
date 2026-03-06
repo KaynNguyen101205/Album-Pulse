@@ -1,0 +1,37 @@
+.wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+  gap: 0.85rem;
+}
+
+.group {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.label {
+  color: #2f3e52;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.select {
+  width: 100%;
+  border: 1px solid #d2d9e5;
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.72rem;
+  color: #0f172a;
+  background: #ffffff;
+  font-size: 0.94rem;
+}
+
+.select:focus-visible {
+  outline: 2px solid #8fd0ff;
+  outline-offset: 2px;
+}
+
+.select:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}

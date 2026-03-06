@@ -1,0 +1,20 @@
+.box {
+  border: 1px dashed #c9d8e9;
+  border-radius: 1rem;
+  padding: 1.2rem;
+  text-align: center;
+  background: #f7fbff;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.message {
+  margin: 0.5rem 0 0;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.44;
+}

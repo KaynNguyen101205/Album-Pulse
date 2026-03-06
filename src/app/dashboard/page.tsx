@@ -1,8 +1,240 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+
+import AlbumCard from '@/components/AlbumCard';
+import EmptyState from '@/components/EmptyState';
+import FilterBar, { type SortFilter, type TimeRangeFilter } from '@/components/FilterBar';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
+
+import styles from './page.module.css';
+
+type ApiAlbum = {
+  id?: string;
+  spotifyId?: string;
+  name?: string;
+  ten?: string;
+  artistName?: string;
+  releaseDate?: string;
+  ngayPhatHanh?: string;
+  spotifyUrl?: string | null;
+  anhBiaUrl?: string | null;
+  images?: Array<{ url?: string }>;
+};
+
+type ApiRecommendationItem = {
+  score?: number;
+  diem?: number;
+  viTri?: number;
+  lyDo?: string;
+  reason?: string;
+  album?: ApiAlbum;
+};
+
+type SuggestResponse = {
+  ok?: boolean;
+  dotGoiYId?: string;
+  items?: ApiRecommendationItem[];
+  error?: string;
+  message?: string;
+};
+
+type DashboardItem = {
+  id: string;
+  title: string;
+  artistName: string;
+  coverUrl: string | null;
+  releaseDate: string | null;
+  score: number;
+  reason: string | null;
+  rank: number | null;
+  spotifyUrl: string | null;
+};
+
+function toNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function toStringOrNull(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+}
+
+function parseReleaseTime(value: string | null): number {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+}
+
+function normalizeItems(items: ApiRecommendationItem[] | undefined): DashboardItem[] {
+  if (!Array.isArray(items)) return [];
+
+  return items.map((item, index) => {
+    const album = item.album ?? {};
+    const title = toStringOrNull(album.name) ?? toStringOrNull(album.ten) ?? 'Unknown album';
+    const artistName = toStringOrNull(album.artistName) ?? 'Unknown artist';
+    const coverFromImages = Array.isArray(album.images)
+      ? toStringOrNull(album.images[0]?.url)
+      : null;
+
+    return {
+      id:
+        toStringOrNull(album.spotifyId) ??
+        toStringOrNull(album.id) ??
+        `recommendation-${index + 1}`,
+      title,
+      artistName,
+      coverUrl: coverFromImages ?? toStringOrNull(album.anhBiaUrl),
+      releaseDate: toStringOrNull(album.releaseDate) ?? toStringOrNull(album.ngayPhatHanh),
+      score: toNumber(item.score) ?? toNumber(item.diem) ?? 0,
+      reason: toStringOrNull(item.lyDo) ?? toStringOrNull(item.reason),
+      rank: toNumber(item.viTri),
+      spotifyUrl: toStringOrNull(album.spotifyUrl),
+    };
+  });
+}
+
+function buildErrorMessage(status: number, payload: SuggestResponse | null): string {
+  if (status === 401) return 'Your session expired. Please sign in with Spotify again.';
+  if (status === 400 && payload?.error === 'invalid_time_range') {
+    return payload.message ?? 'Invalid time range filter.';
+  }
+  if (status === 429) return 'Spotify rate limit reached. Please wait and try again.';
+  return payload?.message ?? 'Could not load recommendations. Please try again.';
+}
+
 export default function DashboardPage() {
+  const [timeRange, setTimeRange] = useState<TimeRangeFilter>('medium_term');
+  const [sort, setSort] = useState<SortFilter>('score');
+  const [items, setItems] = useState<DashboardItem[]>([]);
+  const [dotGoiYId, setDotGoiYId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadRecommendations() {
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        const response = await fetch(`/api/albums/suggest?timeRange=${encodeURIComponent(timeRange)}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        let payload: SuggestResponse | null = null;
+        try {
+          payload = (await response.json()) as SuggestResponse;
+        } catch {
+          payload = null;
+        }
+
+        if (!response.ok) {
+          throw new Error(buildErrorMessage(response.status, payload));
+        }
+
+        setItems(normalizeItems(payload?.items));
+        setDotGoiYId(toStringOrNull(payload?.dotGoiYId));
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
+        const message = error instanceof Error ? error.message : 'Failed to load recommendations.';
+        setItems([]);
+        setErrorMessage(message);
+        setToastMessage(message);
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    }
+
+    loadRecommendations();
+    return () => controller.abort();
+  }, [timeRange]);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timeoutId = window.setTimeout(() => setToastMessage(null), 3600);
+    return () => window.clearTimeout(timeoutId);
+  }, [toastMessage]);
+
+  const sortedItems = useMemo(() => {
+    const sorted = [...items];
+
+    sorted.sort((a, b) => {
+      if (sort === 'score') {
+        if (b.score !== a.score) return b.score - a.score;
+
+        const rankA = typeof a.rank === 'number' ? a.rank : Number.MAX_SAFE_INTEGER;
+        const rankB = typeof b.rank === 'number' ? b.rank : Number.MAX_SAFE_INTEGER;
+        if (rankA !== rankB) return rankA - rankB;
+
+        return a.title.localeCompare(b.title);
+      }
+
+      const releaseDiff = parseReleaseTime(b.releaseDate) - parseReleaseTime(a.releaseDate);
+      if (releaseDiff !== 0) return releaseDiff;
+      if (b.score !== a.score) return b.score - a.score;
+      return a.title.localeCompare(b.title);
+    });
+
+    return sorted;
+  }, [items, sort]);
+
   return (
-    <main style={{ padding: '2rem', fontFamily: 'system-ui' }}>
-      <h1>Dashboard</h1>
-      <p>You are logged in. Session cookie is set.</p>
+    <main className={styles.page}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>Your Dashboard</h1>
+        <p className={styles.subtitle}>
+          Fresh album suggestions based on your Spotify listening history.
+        </p>
+        {dotGoiYId ? <p className={styles.runId}>Run: {dotGoiYId}</p> : null}
+      </header>
+
+      <FilterBar
+        timeRange={timeRange}
+        sort={sort}
+        disabled={isLoading}
+        onTimeRangeChange={setTimeRange}
+        onSortChange={setSort}
+      />
+
+      {errorMessage ? (
+        <p className={styles.errorBanner} role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
+
+      {isLoading ? (
+        <LoadingSkeleton count={9} />
+      ) : sortedItems.length === 0 ? (
+        <EmptyState
+          title="No recommendations available"
+          message="Try changing the time range and generate a fresh recommendation run."
+        />
+      ) : (
+        <section className={styles.grid} aria-live="polite">
+          {sortedItems.map((item) => (
+            <AlbumCard
+              key={item.id}
+              title={item.title}
+              artistName={item.artistName}
+              coverUrl={item.coverUrl}
+              releaseDate={item.releaseDate}
+              score={item.score}
+              reason={item.reason}
+              rank={item.rank}
+              spotifyUrl={item.spotifyUrl}
+            />
+          ))}
+        </section>
+      )}
+
+      {toastMessage ? (
+        <aside className={styles.toast} role="status" aria-live="assertive">
+          {toastMessage}
+        </aside>
+      ) : null}
     </main>
   );
 }
