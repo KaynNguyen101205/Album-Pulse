@@ -1,5 +1,3 @@
-import 'server-only';
-
 import { getOrSet } from '@/server/cache/externalCache';
 import { fetchJsonWithRetry } from '@/server/clients/http';
 

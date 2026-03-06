@@ -12,9 +12,12 @@
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "db:verify": "npx tsx scripts/verify-crud.ts"
+    "db:verify": "npx tsx scripts/verify-crud.ts",
+    "embed:albums": "npx tsx scripts/embed-albums.ts",
+    "inspect:similar": "npx tsx scripts/inspect-similar.ts"
   },
   "dependencies": {
+    "@huggingface/inference": "^4.13.0",
     "@prisma/client": "^5.10.0",
     "next": "14.0.4",
     "prisma": "^5.10.0",
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "dotenv": "^16.4.5",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "eslint": "^8.57.0",

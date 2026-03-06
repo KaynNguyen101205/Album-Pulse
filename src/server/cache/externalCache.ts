@@ -1,5 +1,3 @@
-import 'server-only';
-
 import { prisma } from '@/lib/prisma';
 
 type CacheSource = 'musicbrainz' | 'lastfm' | 'coverart' | string;

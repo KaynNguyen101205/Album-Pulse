@@ -1,5 +1,3 @@
-import 'server-only';
-
 import { setTimeout as sleep } from 'timers/promises';
 
 export type SourceName = 'musicbrainz' | 'lastfm' | 'coverart' | string;
