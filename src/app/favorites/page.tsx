@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
+import ErrorNotice from '@/components/ErrorNotice';
 import { fetchFavorites, removeFavorite } from '@/lib/favorites/client';
 import styles from './page.module.css';
 
@@ -11,6 +12,7 @@ type Favorite = {
 };
 
 type FavoriteApiItems = Awaited<ReturnType<typeof fetchFavorites>>;
+type FavoritesLoadState = 'loading' | 'success' | 'empty' | 'error';
 
 function normalizeFavorites(items: FavoriteApiItems): Favorite[] {
   return items.map((item) => ({
@@ -43,33 +45,29 @@ function FavoriteItem({ item, onRemove, isRemoving = false }: FavoriteItemProps)
 
 export default function FavoritesPage() {
   const [items, setItems] = useState<Favorite[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadState, setLoadState] = useState<FavoritesLoadState>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const loadFavorites = useCallback(async () => {
+    setLoadState('loading');
+    setErrorMessage(null);
 
-    async function loadFavorites() {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const favorites = await fetchFavorites(controller.signal);
-        setItems(normalizeFavorites(favorites));
-      } catch (error) {
-        if ((error as Error).name === 'AbortError') return;
-        setErrorMessage('Failed to load favorites');
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
-        }
-      }
+    try {
+      const favorites = await fetchFavorites();
+      const normalized = normalizeFavorites(favorites);
+      setItems(normalized);
+      setLoadState(normalized.length === 0 ? 'empty' : 'success');
+    } catch (error) {
+      setItems([]);
+      setErrorMessage('Failed to load favorites');
+      setLoadState('error');
     }
-
-    loadFavorites();
-    return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    void loadFavorites();
+  }, [loadFavorites]);
 
   async function handleRemove(id: string) {
     setRemovingIds((prev) => {
@@ -80,9 +78,14 @@ export default function FavoritesPage() {
 
     try {
       await removeFavorite(id);
-      setItems((prev) => prev.filter((item) => item.id !== id));
+      setItems((prev) => {
+        const next = prev.filter((item) => item.id !== id);
+        setLoadState(next.length === 0 ? 'empty' : 'success');
+        return next;
+      });
     } catch (error) {
-      console.error('Failed to remove favorite', error);
+      setErrorMessage('Failed to load favorites');
+      setLoadState('error');
     } finally {
       setRemovingIds((prev) => {
         const next = new Set(prev);
@@ -98,15 +101,17 @@ export default function FavoritesPage() {
         <h1 className={styles.title}>Favorites</h1>
       </header>
 
-      {isLoading ? (
+      {loadState === 'loading' ? (
         <section className={styles.stateBox} aria-busy="true">
           Loading favorites...
         </section>
-      ) : errorMessage ? (
-        <section className={styles.errorBox} role="alert">
-          Failed to load favorites
-        </section>
-      ) : items.length === 0 ? (
+      ) : loadState === 'error' ? (
+        <ErrorNotice
+          className={styles.errorWrap}
+          message={errorMessage ?? 'Failed to load favorites'}
+          onRetry={loadFavorites}
+        />
+      ) : loadState === 'empty' ? (
         <section className={styles.stateBox}>No favorites yet</section>
       ) : (
         <section className={styles.list} aria-live="polite">

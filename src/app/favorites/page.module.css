@@ -43,6 +43,10 @@
   gap: 0.75rem;
 }
 
+.errorWrap {
+  margin-bottom: 0.75rem;
+}
+
 .favoriteItem {
   display: flex;
   align-items: center;

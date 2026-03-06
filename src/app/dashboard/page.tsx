@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import AlbumCard from '@/components/AlbumCard';
 import EmptyState from '@/components/EmptyState';
+import ErrorNotice from '@/components/ErrorNotice';
 import FilterBar, { type SortFilter, type TimeRangeFilter } from '@/components/FilterBar';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
 import { fetchFavorites as fetchFavoriteAlbums } from '@/lib/favorites/client';
@@ -52,6 +53,8 @@ type DashboardItem = {
   rank: number | null;
   spotifyUrl: string | null;
 };
+
+type DashboardLoadState = 'loading' | 'success' | 'empty' | 'error';
 
 function toNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
@@ -108,9 +111,9 @@ export default function DashboardPage() {
   const [sort, setSort] = useState<SortFilter>('score');
   const [items, setItems] = useState<DashboardItem[]>([]);
   const [dotGoiYId, setDotGoiYId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadState, setLoadState] = useState<DashboardLoadState>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
   const [favoriteSpotifyIds, setFavoriteSpotifyIds] = useState<Set<string>>(new Set());
 
   const refreshFavorites = useCallback(async () => {
@@ -138,11 +141,15 @@ export default function DashboardPage() {
     void refreshFavorites();
   }, [refreshFavorites]);
 
+  const retryRecommendations = useCallback(() => {
+    setRetryNonce((prev) => prev + 1);
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
 
     async function loadRecommendations() {
-      setIsLoading(true);
+      setLoadState('loading');
       setErrorMessage(null);
 
       try {
@@ -162,28 +169,22 @@ export default function DashboardPage() {
           throw new Error(buildErrorMessage(response.status, payload));
         }
 
-        setItems(normalizeItems(payload?.items));
+        const normalized = normalizeItems(payload?.items);
+        setItems(normalized);
         setDotGoiYId(toStringOrNull(payload?.dotGoiYId));
+        setLoadState(normalized.length === 0 ? 'empty' : 'success');
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
         const message = error instanceof Error ? error.message : 'Failed to load recommendations.';
         setItems([]);
         setErrorMessage(message);
-        setToastMessage(message);
-      } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
+        setLoadState('error');
       }
     }
 
     loadRecommendations();
     return () => controller.abort();
-  }, [timeRange]);
-
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timeoutId = window.setTimeout(() => setToastMessage(null), 3600);
-    return () => window.clearTimeout(timeoutId);
-  }, [toastMessage]);
+  }, [timeRange, retryNonce]);
 
   const sortedItems = useMemo(() => {
     const sorted = [...items];
@@ -221,24 +222,23 @@ export default function DashboardPage() {
       <FilterBar
         timeRange={timeRange}
         sort={sort}
-        disabled={isLoading}
+        disabled={loadState === 'loading'}
         onTimeRangeChange={setTimeRange}
         onSortChange={setSort}
       />
 
-      {errorMessage ? (
-        <p className={styles.errorBanner} role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
-
-      {isLoading ? (
+      {loadState === 'loading' ? (
         <LoadingSkeleton count={9} />
-      ) : sortedItems.length === 0 ? (
-        <EmptyState
-          title="No recommendations available"
-          message="Try changing the time range and generate a fresh recommendation run."
+      ) : loadState === 'error' ? (
+        <ErrorNotice
+          className={styles.errorWrap}
+          message={errorMessage ?? 'Failed to load recent plays.'}
+          onRetry={retryRecommendations}
         />
+      ) : loadState === 'empty' ? (
+        <section className={styles.emptyStateWrap}>
+          <EmptyState title="No recent plays found" message="No recent plays found" />
+        </section>
       ) : (
         <section className={styles.grid} aria-live="polite">
           {sortedItems.map((item) => (
@@ -263,12 +263,6 @@ export default function DashboardPage() {
           ))}
         </section>
       )}
-
-      {toastMessage ? (
-        <aside className={styles.toast} role="status" aria-live="assertive">
-          {toastMessage}
-        </aside>
-      ) : null}
     </main>
   );
 }
