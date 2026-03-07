@@ -13,11 +13,11 @@ export type ParseResult<T> =
 /**
  * Parse and return either data or a 400 validation_error response.
  */
-export function parseWithSchema<T>(
-  schema: z.ZodType<T>,
+export function parseWithSchema<TSchema extends z.ZodTypeAny>(
+  schema: TSchema,
   input: unknown,
   options?: { message?: string }
-): ParseResult<T> {
+): ParseResult<z.output<TSchema>> {
   const result = schema.safeParse(input);
   if (result.success) {
     return { ok: true, data: result.data };

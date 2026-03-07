@@ -18,11 +18,11 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    const parsed = parseWithSchema(analyticsEventBodySchema, {});
+    const parsed = parseWithSchema<typeof analyticsEventBodySchema>(analyticsEventBodySchema, {});
     if (parsed.ok === false) return parsed.response;
     return validationError('Invalid JSON body.', { fieldErrors: {}, formErrors: [] });
   }
-  const parsed = parseWithSchema(analyticsEventBodySchema, body);
+  const parsed = parseWithSchema<typeof analyticsEventBodySchema>(analyticsEventBodySchema, body);
   if (parsed.ok === false) return parsed.response;
 
   try {
