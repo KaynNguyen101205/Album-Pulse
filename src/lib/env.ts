@@ -1,11 +1,18 @@
 import 'server-only';
 
-type RequiredEnvKey = 'DATABASE_URL' | 'SPOTIFY_CLIENT_ID' | 'SPOTIFY_REDIRECT_URI';
+type RequiredEnvKey =
+  | 'DATABASE_URL'
+  | 'NEXTAUTH_URL'
+  | 'NEXTAUTH_SECRET'
+  | 'GOOGLE_CLIENT_ID'
+  | 'GOOGLE_CLIENT_SECRET';
 
 const requiredEnv: Record<RequiredEnvKey, string | undefined> = {
   DATABASE_URL: process.env.DATABASE_URL,
-  SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
-  SPOTIFY_REDIRECT_URI: process.env.SPOTIFY_REDIRECT_URI,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
 };
 
 const missingKeys = Object.entries(requiredEnv)
@@ -18,19 +25,17 @@ if (missingKeys.length > 0) {
       'Missing required environment variables:',
       missingKeys.join(', '),
       '',
-      'Set these in your local `.env.local` and in your Vercel project settings (Environment Variables).',
-    ].join(' '),
+      'Set these in your local `.env` and in your Vercel project settings (Environment Variables).',
+    ].join(' ')
   );
 }
 
 export const env = {
   DATABASE_URL: requiredEnv.DATABASE_URL as string,
-  SPOTIFY_CLIENT_ID: requiredEnv.SPOTIFY_CLIENT_ID as string,
-  SPOTIFY_REDIRECT_URI: requiredEnv.SPOTIFY_REDIRECT_URI as string,
-
-  // Optional, but commonly used on the server for the Authorization Code flow with refresh tokens.
-  SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
-  SPOTIFY_FORCE_SHOW_DIALOG: process.env.SPOTIFY_FORCE_SHOW_DIALOG,
+  NEXTAUTH_URL: requiredEnv.NEXTAUTH_URL as string,
+  NEXTAUTH_SECRET: requiredEnv.NEXTAUTH_SECRET as string,
+  GOOGLE_CLIENT_ID: requiredEnv.GOOGLE_CLIENT_ID as string,
+  GOOGLE_CLIENT_SECRET: requiredEnv.GOOGLE_CLIENT_SECRET as string,
 } as const;
 
 export type Env = typeof env;

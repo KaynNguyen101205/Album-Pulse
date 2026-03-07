@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AlbumPulse",
-  description: "Spotify album recommendations based on your listening habits",
+  description: "Album recommendations and weekly picks",
 };
 
 export default function RootLayout({

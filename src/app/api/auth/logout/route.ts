@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
-import { clearSessionCookie } from '@/lib/session';
 
-// JSON logout for API / client-side usage.
-export async function POST() {
-  const res = NextResponse.json({ ok: true });
-  await clearSessionCookie(res);
-  return res;
+/** Redirect to NextAuth signout so the session is cleared. */
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const callbackUrl = url.searchParams.get('callbackUrl') ?? '/';
+  return NextResponse.redirect(
+    new URL(`/api/auth/signout?callbackUrl=${encodeURIComponent(callbackUrl)}`, url.origin)
+  );
 }
 
-// Simple browser-friendly logout: visit /api/auth/logout directly.
-export async function GET(request: Request) {
-  const res = NextResponse.redirect(new URL('/', request.url));
-  await clearSessionCookie(res);
-  return res;
+export async function POST(request: Request) {
+  const url = new URL(request.url);
+  const callbackUrl = url.searchParams.get('callbackUrl') ?? '/';
+  return NextResponse.redirect(
+    new URL(`/api/auth/signout?callbackUrl=${encodeURIComponent(callbackUrl)}`, url.origin)
+  );
 }
