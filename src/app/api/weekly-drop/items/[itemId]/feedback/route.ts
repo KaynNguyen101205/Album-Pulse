@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-
-import type { WeeklyDropFeedbackPatch } from '@/types/weekly-drop';
 import {
   FeedbackLockedError,
   FeedbackValidationError,
@@ -8,59 +6,57 @@ import {
   WeeklyDropItemNotFoundError,
   updateWeeklyDropItemFeedback,
 } from '@/server/services/weekly-drop.service';
+import { itemIdParamSchema, weeklyDropFeedbackPatchSchema } from '@/lib/validation/schemas';
+import { parseWithSchema } from '@/lib/validation/parse';
+import {
+  badRequest,
+  unauthorized,
+  notFound,
+  validationError,
+  internalError,
+} from '@/lib/api/errors';
+import type { FeedbackResponseDTO } from '@/lib/dto';
 
-function parseBody(body: unknown): WeeklyDropFeedbackPatch | null {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
-  return body as WeeklyDropFeedbackPatch;
-}
-
+/**
+ * PATCH /api/weekly-drop/items/:itemId/feedback
+ * Update feedback (like/dislike/skip/save/rating/review) for a weekly drop item.
+ * Only the owner can update; only current week's drop is editable.
+ */
 export async function PATCH(
   request: Request,
-  context: { params: { itemId: string } }
+  context: { params: Promise<{ itemId: string }> | { itemId: string } }
 ) {
+  const params = typeof context.params === 'object' && 'then' in context.params
+    ? await context.params
+    : context.params;
+  const paramParsed = parseWithSchema(itemIdParamSchema, params);
+  if (!paramParsed.ok) return paramParsed.response;
+  const { itemId } = paramParsed.data;
+
+  let body: unknown;
   try {
-    const itemId = context.params.itemId;
-    if (!itemId?.trim()) {
-      return NextResponse.json({ error: 'bad_request' }, { status: 400 });
-    }
+    body = await request.json();
+  } catch {
+    return badRequest('Invalid JSON body.');
+  }
+  const bodyParsed = parseWithSchema(weeklyDropFeedbackPatchSchema, body);
+  if (!bodyParsed.ok) return bodyParsed.response;
+  const patch = bodyParsed.data;
 
-    let rawBody: unknown;
-    try {
-      rawBody = await request.json();
-    } catch {
-      return NextResponse.json({ error: 'bad_request' }, { status: 400 });
-    }
-
-    const patch = parseBody(rawBody);
-    if (!patch) {
-      return NextResponse.json({ error: 'bad_request' }, { status: 400 });
-    }
-
+  try {
     const feedback = await updateWeeklyDropItemFeedback(itemId, patch);
-    return NextResponse.json({ ok: true, feedback });
+    const dto: FeedbackResponseDTO = { ok: true, feedback };
+    return NextResponse.json(dto);
   } catch (error) {
-    if (error instanceof NotLoggedInError) {
-      return NextResponse.json({ error: 'not_logged_in' }, { status: 401 });
-    }
-    if (error instanceof WeeklyDropItemNotFoundError) {
-      return NextResponse.json({ error: 'not_found' }, { status: 404 });
-    }
+    if (error instanceof NotLoggedInError) return unauthorized();
+    if (error instanceof WeeklyDropItemNotFoundError) return notFound('Weekly drop item not found.');
     if (error instanceof FeedbackLockedError) {
-      return NextResponse.json(
-        { error: 'feedback_locked', message: error.message },
-        { status: 400 }
-      );
+      return validationError(error.message);
     }
     if (error instanceof FeedbackValidationError) {
-      return NextResponse.json(
-        { error: 'invalid_feedback', message: error.message },
-        { status: 400 }
-      );
+      return validationError(error.message);
     }
-
-    return NextResponse.json(
-      { error: 'unexpected', message: String(error) },
-      { status: 500 }
-    );
+    console.error('[api/weekly-drop/items/feedback]', error);
+    return internalError();
   }
 }

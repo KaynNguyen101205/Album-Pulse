@@ -1,26 +1,28 @@
 import { NextResponse } from 'next/server';
-
 import {
   NotLoggedInError,
   getCurrentWeeklyDrop,
 } from '@/server/services/weekly-drop.service';
+import { unauthorized, internalError } from '@/lib/api/errors';
+import type { WeeklyDropDTO } from '@/lib/dto';
 
+/**
+ * GET /api/weekly-drop/current
+ * Returns the current week's weekly drop for the authenticated user.
+ */
 export async function GET() {
   try {
     const drop = await getCurrentWeeklyDrop();
-
-    return NextResponse.json({
+    const dto: { ok: true; drop: WeeklyDropDTO } = {
       ok: true,
-      drop,
-    });
+      drop: drop as WeeklyDropDTO,
+    };
+    return NextResponse.json(dto);
   } catch (error) {
     if (error instanceof NotLoggedInError) {
-      return NextResponse.json({ error: 'not_logged_in' }, { status: 401 });
+      return unauthorized();
     }
-
-    return NextResponse.json(
-      { error: 'unexpected', message: String(error) },
-      { status: 500 }
-    );
+    console.error('[api/weekly-drop/current]', error);
+    return internalError();
   }
 }
