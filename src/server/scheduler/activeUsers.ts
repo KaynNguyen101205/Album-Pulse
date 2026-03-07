@@ -8,7 +8,7 @@ export const INACTIVE_DAYS = 56;
 
 /**
  * Returns user IDs that are "active" for scheduled weekly drop generation:
- * have at least one session with expiresAt >= (now - INACTIVE_DAYS).
+ * have at least one session with expires >= (now - INACTIVE_DAYS).
  * Inactive users are skipped by the cron; they can get a drop on-demand when they return.
  */
 export async function getActiveUserIds(): Promise<string[]> {
@@ -16,7 +16,7 @@ export async function getActiveUserIds(): Promise<string[]> {
   cutoff.setDate(cutoff.getDate() - INACTIVE_DAYS);
 
   const rows = await prisma.session.findMany({
-    where: { expiresAt: { gte: cutoff } },
+    where: { expires: { gte: cutoff } },
     select: { userId: true },
     distinct: ['userId'],
   });
