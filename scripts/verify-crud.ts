@@ -1,92 +1,69 @@
 /**
- * Minimal CRUD verification for current legacy schema.
+ * Minimal CRUD verification for current schema (User, Artist, Album, UserFavoriteAlbum).
  * Run: npm run db:verify
  */
-import { TimeRangeSpotify, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient({ log: ['query', 'info', 'warn', 'error'] });
 
+const VERIFY_USER_ID = 'verify-user-id';
+const VERIFY_ARTIST_MBID = 'verify-artist-mbid';
+const VERIFY_ALBUM_MBID = 'verify-album-mbid';
+
 async function main() {
-  const nguoiDung = await prisma.nguoiDung.upsert({
-    where: { spotifyId: 'verify-user-spotify-id' },
+  const user = await prisma.user.upsert({
+    where: { id: VERIFY_USER_ID },
     create: {
-      spotifyId: 'verify-user-spotify-id',
-      tenHienThi: 'Verify User',
+      id: VERIFY_USER_ID,
       email: 'verify@album-pulse.local',
+      name: 'Verify User',
     },
     update: {},
     select: { id: true },
   });
 
-  const ngheSi = await prisma.ngheSi.upsert({
-    where: { spotifyId: 'verify-artist' },
+  const artist = await prisma.artist.upsert({
+    where: { mbid: VERIFY_ARTIST_MBID },
     create: {
-      spotifyId: 'verify-artist',
-      ten: 'Verify Artist',
+      id: randomUUID(),
+      mbid: VERIFY_ARTIST_MBID,
+      name: 'Verify Artist',
     },
     update: {},
     select: { id: true },
   });
 
   const album = await prisma.album.upsert({
-    where: { spotifyId: 'verify-album' },
+    where: { mbid: VERIFY_ALBUM_MBID },
     create: {
-      spotifyId: 'verify-album',
-      ten: 'Verify Album',
-      ngayPhatHanh: '2024',
-      doChinhXacNgay: 'YEAR',
+      id: randomUUID(),
+      mbid: VERIFY_ALBUM_MBID,
+      title: 'Verify Album',
+      artistId: artist.id,
+      releaseYear: 2024,
+      source: 'MANUAL',
     },
     update: {},
     select: { id: true },
   });
 
-  await prisma.albumNgheSi.upsert({
+  await prisma.userFavoriteAlbum.upsert({
     where: {
-      albumId_ngheSiId: {
-        albumId: album.id,
-        ngheSiId: ngheSi.id,
-      },
-    },
-    create: {
-      albumId: album.id,
-      ngheSiId: ngheSi.id,
-      viTri: 1,
-    },
-    update: {
-      viTri: 1,
-    },
-  });
-
-  await prisma.yeuThichAlbum.upsert({
-    where: {
-      nguoiDungId_albumId: {
-        nguoiDungId: nguoiDung.id,
+      userId_albumId: {
+        userId: user.id,
         albumId: album.id,
       },
     },
     create: {
-      nguoiDungId: nguoiDung.id,
+      id: randomUUID(),
+      userId: user.id,
       albumId: album.id,
     },
     update: {},
   });
 
-  await prisma.caiDatNguoiDung.upsert({
-    where: { nguoiDungId: nguoiDung.id },
-    create: {
-      nguoiDungId: nguoiDung.id,
-      soLuongGoiY: 20,
-      timeRangeMacDinh: TimeRangeSpotify.MEDIUM_TERM,
-      ngheSiYeuThich: ['Verify Artist'],
-      theLoaiYeuThich: ['rock'],
-    },
-    update: {
-      ngheSiYeuThich: ['Verify Artist'],
-      theLoaiYeuThich: ['rock'],
-    },
-  });
-
-  console.log('CRUD verification passed for legacy schema.');
+  console.log('CRUD verification passed for current schema.');
 }
 
 main()
