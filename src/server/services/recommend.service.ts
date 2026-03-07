@@ -1,8 +1,7 @@
 import 'server-only';
 
-import { NguonGoiY, TimeRangeSpotify } from '@prisma/client';
+import { NguonGoiY, TimeRangeSpotify } from '@/lib/recommend/constants';
 
-import { prisma } from '@/lib/prisma';
 import { rankRecommendations } from '@/lib/recommend/engine';
 import {
   decodeRunsCursor,
@@ -155,13 +154,8 @@ export async function generateAndPersistRecommendations(
     throw new NotLoggedInError();
   }
 
-  const userSettings = await prisma.caiDatNguoiDung.findUnique({
-    where: { nguoiDungId },
-    select: { soLuongGoiY: true },
-  });
-
   const timeRange = input.timeRange ?? TimeRangeSpotify.MEDIUM_TERM;
-  const defaultLimit = userSettings?.soLuongGoiY ?? 20;
+  const defaultLimit = 20;
   const limit = normalizeGenerateLimit(input.limit ?? defaultLimit);
   const accessToken = await getValidAccessToken();
 

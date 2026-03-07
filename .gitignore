@@ -25,3 +25,6 @@ prisma/dev.db-journal
 # Do not commit docs markdown
 docs/**/*.md
 certificates
+
+# Vercel
+.vercel

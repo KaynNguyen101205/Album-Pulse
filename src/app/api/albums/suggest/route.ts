@@ -1,4 +1,4 @@
-import { TimeRangeSpotify } from '@prisma/client';
+import { TimeRangeSpotify } from '@/lib/recommend/constants';
 import { NextResponse } from 'next/server';
 import { SpotifyApiError } from '@/lib/spotify/types';
 import { generateAndPersistRecommendations } from '@/server/services/recommend.service';

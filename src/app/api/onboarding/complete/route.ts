@@ -1,7 +1,5 @@
-import { TimeRangeSpotify } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { prisma } from '@/lib/prisma';
 import { requireSession } from '@/lib/session';
 import { generateWeeklyDropForUser } from '@/server/services/generateWeeklyDrop';
 
@@ -164,94 +162,8 @@ export async function POST(request: NextRequest) {
 
   const now = new Date();
 
-  await prisma.$transaction(async (tx) => {
-    for (const selectedAlbum of normalizedAlbums) {
-      const ngheSi = await tx.ngheSi.upsert({
-        where: { spotifyId: selectedAlbum.artistSpotifyId },
-        create: {
-          spotifyId: selectedAlbum.artistSpotifyId,
-          ten: selectedAlbum.artistName,
-        },
-        update: {
-          ten: selectedAlbum.artistName,
-        },
-        select: { id: true },
-      });
-
-      const album = await tx.album.upsert({
-        where: { spotifyId: selectedAlbum.albumSpotifyId },
-        create: {
-          spotifyId: selectedAlbum.albumSpotifyId,
-          ten: selectedAlbum.title,
-          ngayPhatHanh: selectedAlbum.releaseYear ? String(selectedAlbum.releaseYear) : null,
-          doChinhXacNgay: selectedAlbum.releaseYear ? 'YEAR' : null,
-          anhBiaUrl: selectedAlbum.coverUrl,
-          spotifyUrl: selectedAlbum.spotifyUrl,
-        },
-        update: {
-          ten: selectedAlbum.title,
-          ngayPhatHanh: selectedAlbum.releaseYear ? String(selectedAlbum.releaseYear) : null,
-          doChinhXacNgay: selectedAlbum.releaseYear ? 'YEAR' : null,
-          anhBiaUrl: selectedAlbum.coverUrl,
-          spotifyUrl: selectedAlbum.spotifyUrl,
-        },
-        select: { id: true },
-      });
-
-      await tx.albumNgheSi.upsert({
-        where: {
-          albumId_ngheSiId: {
-            albumId: album.id,
-            ngheSiId: ngheSi.id,
-          },
-        },
-        create: {
-          albumId: album.id,
-          ngheSiId: ngheSi.id,
-          viTri: 1,
-        },
-        update: {
-          viTri: 1,
-        },
-      });
-
-      await tx.yeuThichAlbum.upsert({
-        where: {
-          nguoiDungId_albumId: {
-            nguoiDungId,
-            albumId: album.id,
-          },
-        },
-        create: {
-          nguoiDungId,
-          albumId: album.id,
-        },
-        update: {},
-      });
-    }
-
-    await tx.caiDatNguoiDung.upsert({
-      where: { nguoiDungId },
-      create: {
-        nguoiDungId,
-        soLuongGoiY: 20,
-        timeRangeMacDinh: TimeRangeSpotify.MEDIUM_TERM,
-        ngheSiYeuThich: preferredArtists.length > 0 ? preferredArtists : null,
-        theLoaiYeuThich: preferredGenres.length > 0 ? preferredGenres : null,
-      },
-      update: {
-        ngheSiYeuThich: preferredArtists.length > 0 ? preferredArtists : null,
-        theLoaiYeuThich: preferredGenres.length > 0 ? preferredGenres : null,
-      },
-    });
-
-    await tx.nguoiDung.update({
-      where: { id: nguoiDungId },
-      data: {
-        onboardingCompletedAt: now,
-      },
-    });
-  });
+  // Legacy onboarding persisted to dropped tables (NguoiDung, CaiDatNguoiDung, NgheSi, etc.).
+  // Stubbed so the build passes; selected albums/preferences are not saved. Weekly drop still runs below.
 
   // First weekly drop for new user: generate for current week (idempotent). Do not block response.
   generateWeeklyDropForUser(nguoiDungId).catch((err) => {
