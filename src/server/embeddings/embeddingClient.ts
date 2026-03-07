@@ -6,13 +6,13 @@ const EMBEDDING_API_URL = process.env.EMBEDDING_API_URL;
 const EMBEDDING_API_KEY = process.env.EMBEDDING_API_KEY;
 
 /** True when using HF free Inference Providers API via SDK (no custom URL). */
-function useHuggingFaceSdk(): boolean {
+function isHuggingFaceSdkConfig(): boolean {
   const key = EMBEDDING_API_KEY?.trim();
   return Boolean(key?.startsWith('hf_') && !EMBEDDING_API_URL);
 }
 
 function requireConfig(): void {
-  if (useHuggingFaceSdk()) return;
+  if (isHuggingFaceSdkConfig()) return;
   if (EMBEDDING_API_URL) return;
   throw new Error(
     'Embedding config missing. Either: (1) Set EMBEDDING_API_KEY=hf_xxx for HF free tier (leave EMBEDDING_API_URL unset), or (2) Set EMBEDDING_API_URL for a custom endpoint.'
@@ -116,7 +116,7 @@ let provider: EmbeddingProvider | null = null;
 
 function getProvider(): EmbeddingProvider {
   if (!provider) {
-    provider = useHuggingFaceSdk()
+    provider = isHuggingFaceSdkConfig()
       ? new HuggingFaceSdkProvider()
       : new HttpEmbeddingProvider();
   }
