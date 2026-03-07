@@ -35,7 +35,7 @@ export async function GET() {
   let drop = await getCurrentWeeklyDrop(userId);
   if (!drop) {
     const result = await generateWeeklyDropForUser(userId);
-    if (!result.ok) {
+    if (result.ok === false) {
       return NextResponse.json(
         {
           weeklyDrop: null,

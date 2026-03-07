@@ -37,7 +37,7 @@ export async function runWeeklyDropCron(): Promise<{
     const result = await generateWeeklyDropForUser(userId, { weekStart });
     logGenerationEnd(userId, weekKey, result);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       failed += 1;
       continue;
     }

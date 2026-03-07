@@ -38,10 +38,9 @@ export async function POST(request: NextRequest) {
     force: Boolean(body.force),
   });
 
-  if (!result.ok) {
-    const failure = result as { ok: false; error: string };
+  if (result.ok === false) {
     return NextResponse.json(
-      { ok: false, error: failure.error },
+      { ok: false, error: result.error },
       { status: 200 }
     );
   }

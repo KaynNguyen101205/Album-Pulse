@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { requireSession } from '@/lib/session';
 import { getValidAccessToken, fetchAlbumById, pickBestAlbumImageUrl, NotLoggedInError } from '@/server/services/spotify.service';
@@ -9,20 +10,20 @@ export async function GET() {
   if (auth instanceof NextResponse) return auth;
   const nguoiDungId = auth;
 
-  const favorites = await prisma.yeuThichAlbum.findMany({
-    where: { nguoiDungId },
-    orderBy: { createdAt: 'desc' },
+  const favorites = await prisma.userFavoriteAlbum.findMany({
+    where: { userId: nguoiDungId },
+    orderBy: { addedAt: 'desc' },
     include: {
       album: {
-        select: { spotifyId: true, ten: true, anhBiaUrl: true },
+        select: { mbid: true, title: true, coverUrl: true },
       },
     },
   });
 
   const items = favorites.map((f) => ({
-    spotifyId: f.album.spotifyId,
-    ten: f.album.ten,
-    anhBiaUrl: f.album.anhBiaUrl,
+    spotifyId: f.album.mbid.startsWith('spotify:') ? f.album.mbid.slice('spotify:'.length) : f.album.mbid,
+    ten: f.album.title,
+    anhBiaUrl: f.album.coverUrl,
   }));
 
   return NextResponse.json({ items });
@@ -45,8 +46,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
+  const albumMbid = `spotify:${albumSpotifyId}`;
   let album = await prisma.album.findUnique({
-    where: { spotifyId: albumSpotifyId },
+    where: { mbid: albumMbid },
   });
 
   if (!album) {
@@ -54,18 +56,33 @@ export async function POST(request: NextRequest) {
       const accessToken = await getValidAccessToken();
       const spAlbum = await fetchAlbumById(accessToken, albumSpotifyId);
 
-      const anhBiaUrl = pickBestAlbumImageUrl(spAlbum.images) ?? null;
-      const spotifyUrl = spAlbum.external_urls?.spotify ?? null;
-      const ngayPhatHanh = spAlbum.release_date ?? null;
+      const coverUrl = pickBestAlbumImageUrl(spAlbum.images) ?? null;
+      const releaseYearRaw = Number.parseInt((spAlbum.release_date ?? '').slice(0, 4), 10);
+      const releaseYear = Number.isFinite(releaseYearRaw) ? releaseYearRaw : null;
+      const primaryArtist = spAlbum.artists?.[0];
+      const artistId = `spotify:${primaryArtist?.id ?? 'unknown-artist'}`;
+      const artist = await prisma.artist.upsert({
+        where: { id: artistId },
+        create: {
+          id: artistId,
+          mbid: primaryArtist?.id ? `spotify:${primaryArtist.id}` : null,
+          name: primaryArtist?.name ?? 'Unknown artist',
+        },
+        update: {
+          name: primaryArtist?.name ?? 'Unknown artist',
+          ...(primaryArtist?.id ? { mbid: `spotify:${primaryArtist.id}` } : {}),
+        },
+      });
 
       album = await prisma.album.create({
         data: {
-          spotifyId: spAlbum.id,
-          ten: spAlbum.name,
-          ngayPhatHanh,
-          anhBiaUrl,
-          spotifyUrl,
-          uri: spAlbum.uri ?? null,
+          id: randomUUID(),
+          mbid: albumMbid,
+          title: spAlbum.name,
+          artistId: artist.id,
+          releaseYear,
+          coverUrl,
+          source: 'MANUAL',
         },
       });
     } catch (err) {
@@ -85,8 +102,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await prisma.yeuThichAlbum.create({
-      data: { nguoiDungId, albumId: album.id },
+    await prisma.userFavoriteAlbum.create({
+      data: { id: randomUUID(), userId: nguoiDungId, albumId: album.id },
     });
   } catch (e: unknown) {
     const isUniqueViolation =
@@ -111,17 +128,14 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
+  const albumMbid = `spotify:${albumSpotifyId}`;
   const album = await prisma.album.findUnique({
-    where: { spotifyId: albumSpotifyId },
+    where: { mbid: albumMbid },
   });
 
   if (album) {
     try {
-      await prisma.yeuThichAlbum.delete({
-        where: {
-          nguoiDungId_albumId: { nguoiDungId, albumId: album.id },
-        },
-      });
+      await prisma.userFavoriteAlbum.deleteMany({ where: { userId: nguoiDungId, albumId: album.id } });
     } catch (e: unknown) {
       const isNotFound =
         e &&

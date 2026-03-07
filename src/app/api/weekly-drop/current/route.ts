@@ -6,6 +6,8 @@ import {
 import { unauthorized, internalError } from '@/lib/api/errors';
 import type { WeeklyDropDTO } from '@/lib/dto';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/weekly-drop/current
  * Returns the current week's weekly drop for the authenticated user.

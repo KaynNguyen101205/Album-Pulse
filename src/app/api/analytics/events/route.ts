@@ -8,6 +8,7 @@ import { analyticsEventBodySchema } from '@/lib/validation/schemas';
 import { parseWithSchema } from '@/lib/validation/parse';
 import { unauthorized, validationError, internalError } from '@/lib/api/errors';
 import type { EventTrackingResponseDTO } from '@/lib/dto';
+import type { AnalyticsEventPayload } from '@/types/weekly-drop';
 
 /**
  * POST /api/analytics/events
@@ -26,7 +27,20 @@ export async function POST(request: Request) {
   if (parsed.ok === false) return parsed.response;
 
   try {
-    await createAnalyticsEvent(parsed.data);
+    const { eventName, weeklyDropId, weeklyDropItemId, metadata } = parsed.data;
+    if (!eventName) {
+      return validationError('Validation failed.', {
+        fieldErrors: { eventName: ['eventName is required.'] },
+        formErrors: [],
+      });
+    }
+    const payload: AnalyticsEventPayload = {
+      eventName,
+      weeklyDropId: weeklyDropId ?? null,
+      weeklyDropItemId: weeklyDropItemId ?? null,
+      metadata: metadata ?? null,
+    };
+    await createAnalyticsEvent(payload);
     const dto: EventTrackingResponseDTO = { ok: true };
     return NextResponse.json(dto);
   } catch (error) {

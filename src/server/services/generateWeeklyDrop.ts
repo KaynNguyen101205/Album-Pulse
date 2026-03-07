@@ -129,11 +129,11 @@ export function logGenerationEnd(
   weekKey: string,
   result: GenerateWeeklyDropResult
 ): void {
-  if (result.ok) {
+  if (result.ok === false) {
+    console.warn(`${LOG_PREFIX} failure userId=${userId} weekKey=${weekKey} error=${result.error}`);
+  } else {
     console.info(
       `${LOG_PREFIX} end userId=${userId} weekKey=${weekKey} generated=${result.generated}${result.generated === false ? ` reason=${result.reason}` : ''}`
     );
-  } else {
-    console.warn(`${LOG_PREFIX} failure userId=${userId} weekKey=${weekKey} error=${result.error}`);
   }
 }

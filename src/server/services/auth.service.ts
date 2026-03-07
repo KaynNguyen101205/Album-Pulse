@@ -7,51 +7,24 @@ export async function upsertUserAndTokens(
   profile: SpotifyMeProfile,
   tokens: TokenResponse
 ): Promise<string> {
-  const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
+  void tokens;
   const imageUrl = profile.images?.[0]?.url ?? null;
 
-  const nguoiDung = await prisma.nguoiDung.upsert({
-    where: { spotifyId: profile.id },
+  const user = await prisma.user.upsert({
+    where: { id: profile.id },
     create: {
-      spotifyId: profile.id,
-      tenHienThi: profile.display_name ?? null,
+      id: profile.id,
+      name: profile.display_name ?? null,
       email: profile.email ?? null,
-      anhDaiDienUrl: imageUrl,
-      quocGia: profile.country ?? null,
-      product: profile.product ?? null,
+      image: imageUrl,
     },
     update: {
-      tenHienThi: profile.display_name ?? null,
+      name: profile.display_name ?? null,
       email: profile.email ?? null,
-      anhDaiDienUrl: imageUrl,
-      quocGia: profile.country ?? null,
-      product: profile.product ?? null,
+      image: imageUrl,
     },
     select: { id: true },
   });
 
-  const tokenData = {
-    accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token ?? '',
-    expiresAt,
-    scope: tokens.scope ?? null,
-    tokenType: tokens.token_type ?? null,
-  };
-
-  await prisma.oAuthToken.upsert({
-    where: { nguoiDungId: nguoiDung.id },
-    create: {
-      nguoiDungId: nguoiDung.id,
-      ...tokenData,
-    },
-    update: {
-      accessToken: tokens.access_token,
-      expiresAt,
-      scope: tokens.scope ?? null,
-      tokenType: tokens.token_type ?? null,
-      ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
-    },
-  });
-
-  return nguoiDung.id;
+  return user.id;
 }

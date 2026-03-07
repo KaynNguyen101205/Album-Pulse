@@ -20,10 +20,12 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return parseWithSchema(onboardingFavoritesBodySchema, {}).response;
+    const parsed = parseWithSchema(onboardingFavoritesBodySchema, {});
+    if (parsed.ok === false) return parsed.response;
+    return Response.json({ error: 'bad_request' }, { status: 400 });
   }
   const parsed = parseWithSchema(onboardingFavoritesBodySchema, body);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
 
   try {
     const result = await saveOnboardingFavorites(userId, parsed.data);

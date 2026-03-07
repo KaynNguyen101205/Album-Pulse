@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     cursor: searchParams.get('cursor') ?? undefined,
   };
   const parsed = parseWithSchema(weeklyDropHistoryQuerySchema, queryInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
 
   try {
     const result = await getWeeklyDropHistory({

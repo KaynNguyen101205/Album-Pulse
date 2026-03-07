@@ -159,7 +159,7 @@ export function applyArtistCap(
   }
 
   const result: CandidateAlbum[] = [];
-  for (const list of byArtist.values()) {
+  for (const list of Array.from(byArtist.values())) {
     const capped = list.slice(0, maxPerArtist);
     result.push(...capped);
   }
@@ -206,9 +206,9 @@ export async function generateCandidatesForUser(
   }
 
   const favoriteAlbumIds = favorites.map((f) => f.albumId);
-  const favoriteArtistNames = [
-    ...new Set(favorites.map((f) => f.artistName).filter(Boolean)),
-  ];
+  const favoriteArtistNames = Array.from(
+    new Set(favorites.map((f) => f.artistName).filter(Boolean))
+  );
 
   const favoriteTags = await prisma.$queryRawUnsafe<
     Array<{ name: string }>
@@ -220,9 +220,9 @@ export async function generateCandidatesForUser(
   );
   const tagsFromFavorites = favoriteTags.map((t) => t.name.toLowerCase());
   const userPreferredTags = options?.userPreferredTags ?? [];
-  const allTags = [
-    ...new Set([...tagsFromFavorites, ...userPreferredTags.map((t) => t.toLowerCase())]),
-  ].slice(0, 8);
+  const allTags = Array.from(
+    new Set([...tagsFromFavorites, ...userPreferredTags.map((t) => t.toLowerCase())])
+  ).slice(0, 8);
 
   const excludedIds = await getExcludedAlbumIds(userId);
 

@@ -23,7 +23,7 @@ export function diversityScoreVsUser(
   );
   const newArtist = !userArtists.has(artist);
   let newTag = false;
-  for (const t of candidateTags) {
+  for (const t of Array.from(candidateTags)) {
     if (!userTags.has(t)) {
       newTag = true;
       break;
@@ -58,7 +58,7 @@ export function diversityScoreVsSelected(
     const artistMatch = artist === otherArtist ? 1 : 0;
     let tagOverlap = 0;
     if (otherTags.size > 0) {
-      for (const t of tags) {
+      for (const t of Array.from(tags)) {
         if (otherTags.has(t)) tagOverlap += 1;
       }
       tagOverlap /= Math.max(tags.size, otherTags.size, 1);

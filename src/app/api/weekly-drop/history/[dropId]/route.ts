@@ -21,7 +21,7 @@ export async function GET(
     ? await context.params
     : context.params;
   const parsed = parseWithSchema(dropIdParamSchema, params);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   const { dropId } = parsed.data;
 
   try {

@@ -11,12 +11,12 @@ export async function GET() {
   const nguoiDungId = auth;
 
   const [user, selectedAlbumCount] = await Promise.all([
-    prisma.nguoiDung.findUnique({
+    prisma.user.findUnique({
       where: { id: nguoiDungId },
-      select: { onboardingCompletedAt: true },
+      select: { id: true },
     }),
-    prisma.yeuThichAlbum.count({
-      where: { nguoiDungId },
+    prisma.userFavoriteAlbum.count({
+      where: { userId: nguoiDungId },
     }),
   ]);
 
@@ -26,7 +26,7 @@ export async function GET() {
 
   return NextResponse.json({
     ok: true,
-    isComplete: Boolean(user.onboardingCompletedAt),
+    isComplete: selectedAlbumCount >= MINIMUM_ALBUMS,
     selectedAlbumCount,
     minimumAlbums: MINIMUM_ALBUMS,
   });

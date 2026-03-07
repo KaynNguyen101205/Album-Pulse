@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     limit: searchParams.get('limit') ?? undefined,
   };
   const parsed = parseWithSchema(searchQuerySchema, queryInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
 
   const { q, limit } = parsed.data;
   const effectiveLimit = limit ?? 10;

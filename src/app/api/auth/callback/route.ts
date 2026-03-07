@@ -110,11 +110,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const onboardingStatus = await prisma.nguoiDung.findUnique({
-    where: { id: nguoiDungId },
-    select: { onboardingCompletedAt: true },
+  const selectedAlbumCount = await prisma.userFavoriteAlbum.count({
+    where: { userId: nguoiDungId },
   });
-  const redirectPath = onboardingStatus?.onboardingCompletedAt ? '/dashboard' : '/onboarding';
+  const redirectPath = selectedAlbumCount >= 3 ? '/dashboard' : '/onboarding';
   const res = NextResponse.redirect(new URL(redirectPath, request.url), 302);
 
   res.cookies.set('spotify_code_verifier', '', { ...CLEAR_COOKIE_OPTIONS, secure: isProduction });

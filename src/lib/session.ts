@@ -1,4 +1,5 @@
 import 'server-only';
+import { randomUUID } from 'crypto';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -23,13 +24,13 @@ export async function getSessionUserId(): Promise<string | null> {
   const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!sessionId) return null;
 
-  const phien = await prisma.phienDangNhap.findUnique({
+  const phien = await prisma.session.findUnique({
     where: { id: sessionId },
-    select: { nguoiDungId: true, expiresAt: true },
+    select: { userId: true, expiresAt: true },
   });
 
   if (!phien || phien.expiresAt < new Date()) return null;
-  return phien.nguoiDungId;
+  return phien.userId;
 }
 
 /**
@@ -52,8 +53,8 @@ export async function setSessionCookie(res: NextResponse, userId: string): Promi
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + SESSION_MAX_AGE_DAYS);
 
-  const phien = await prisma.phienDangNhap.create({
-    data: { nguoiDungId: userId, expiresAt },
+  const phien = await prisma.session.create({
+    data: { id: randomUUID(), userId, expiresAt },
   });
 
   res.cookies.set(SESSION_COOKIE_NAME, phien.id, getCookieOptions());
@@ -67,7 +68,7 @@ export async function clearSessionCookie(res: NextResponse): Promise<void> {
   const cookieStore = cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (sessionId) {
-    await prisma.phienDangNhap.deleteMany({ where: { id: sessionId } });
+    await prisma.session.deleteMany({ where: { id: sessionId } });
   }
 
   const isProd = process.env.NODE_ENV === 'production';
@@ -99,8 +100,8 @@ export async function getSession(): Promise<{ nguoiDungId: string } | null> {
 export async function createSessionRecord(nguoiDungId: string): Promise<string> {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + SESSION_MAX_AGE_DAYS);
-  const phien = await prisma.phienDangNhap.create({
-    data: { nguoiDungId, expiresAt },
+  const phien = await prisma.session.create({
+    data: { id: randomUUID(), userId: nguoiDungId, expiresAt },
   });
   return phien.id;
 }

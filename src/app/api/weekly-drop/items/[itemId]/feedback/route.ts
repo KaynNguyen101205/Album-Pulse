@@ -30,7 +30,7 @@ export async function PATCH(
     ? await context.params
     : context.params;
   const paramParsed = parseWithSchema(itemIdParamSchema, params);
-  if (!paramParsed.ok) return paramParsed.response;
+  if (paramParsed.ok === false) return paramParsed.response;
   const { itemId } = paramParsed.data;
 
   let body: unknown;
@@ -40,7 +40,7 @@ export async function PATCH(
     return badRequest('Invalid JSON body.');
   }
   const bodyParsed = parseWithSchema(weeklyDropFeedbackPatchSchema, body);
-  if (!bodyParsed.ok) return bodyParsed.response;
+  if (bodyParsed.ok === false) return bodyParsed.response;
   const patch = bodyParsed.data;
 
   try {
