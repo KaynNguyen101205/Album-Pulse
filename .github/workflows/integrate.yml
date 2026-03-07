@@ -28,6 +28,10 @@ jobs:
             npm install
           fi
 
+      - name: Verify critical dependencies
+        run: node -e "require('zod')"
+        # Fail fast with a clear error if zod (or other deps) are missing; ensures package-lock.json is in sync with package.json.
+
       - name: Generate Prisma client
         run: npx prisma generate
         env:
