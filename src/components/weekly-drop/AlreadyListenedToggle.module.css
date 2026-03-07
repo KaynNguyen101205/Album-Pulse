@@ -1,0 +1,47 @@
+.wrap {
+  margin-top: 0.65rem;
+  border-top: 1px solid #e4edf7;
+  padding-top: 0.62rem;
+}
+
+.toggleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #1e2d43;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.label {
+  line-height: 1.2;
+}
+
+.notesWrap {
+  margin-top: 0.48rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.notesLabel {
+  color: #42556c;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.notesInput {
+  width: 100%;
+  border-radius: 0.7rem;
+  border: 1px solid #c7d7e7;
+  background: #fbfdff;
+  color: #0f172a;
+  padding: 0.52rem 0.64rem;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.notesInput:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+}

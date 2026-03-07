@@ -1,0 +1,45 @@
+.wrap {
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.label {
+  color: #1f2f43;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.buttons {
+  display: inline-flex;
+  gap: 0.32rem;
+}
+
+.button {
+  border: 1px solid #b9ccdf;
+  background: #f8fbff;
+  color: #203048;
+  border-radius: 0.55rem;
+  min-width: 1.9rem;
+  height: 1.9rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.active {
+  border-color: #2563eb;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.clear {
+  border: 0;
+  background: transparent;
+  color: #516276;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-decoration: underline;
+}

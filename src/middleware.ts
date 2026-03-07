@@ -11,7 +11,9 @@ export function middleware(request: NextRequest) {
     pathname === '/dashboard' ||
     pathname.startsWith('/dashboard/') ||
     pathname === '/favorites' ||
-    pathname.startsWith('/favorites/');
+    pathname.startsWith('/favorites/') ||
+    pathname === '/weekly-drop' ||
+    pathname.startsWith('/weekly-drop/');
 
   if (!isProtected) return NextResponse.next();
 
@@ -24,5 +26,14 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/onboarding', '/onboarding/:path*', '/dashboard', '/dashboard/:path*', '/favorites', '/favorites/:path*'],
+  matcher: [
+    '/onboarding',
+    '/onboarding/:path*',
+    '/dashboard',
+    '/dashboard/:path*',
+    '/favorites',
+    '/favorites/:path*',
+    '/weekly-drop',
+    '/weekly-drop/:path*',
+  ],
 };
