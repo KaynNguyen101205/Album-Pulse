@@ -50,7 +50,7 @@ async function getFavoriteArtistsAndTags(userId: string): Promise<{
      WHERE ufa."userId" = $1`,
     userId
   );
-  const artistNames = [...new Set(favorites.map((f) => f.artistName).filter(Boolean))];
+  const artistNames = Array.from(new Set(favorites.map((f) => f.artistName).filter(Boolean)));
   const albumIds = favorites.map((f) => f.albumId);
 
   if (albumIds.length === 0) {

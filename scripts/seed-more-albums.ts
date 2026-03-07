@@ -130,7 +130,7 @@ async function main() {
         artistId,
         releaseYear: Number.isFinite(releaseYear) ? releaseYear : null,
         coverUrl,
-        tags: [...new Set(tagNames)],
+        tags: Array.from(new Set(tagNames)),
       });
       added += 1;
       console.log(`  + ${rg.title} — ${artistName}`);
