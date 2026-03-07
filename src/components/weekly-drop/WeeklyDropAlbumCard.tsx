@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { WeeklyDropFeedbackPatch, WeeklyDropItem } from '@/types/weekly-drop';
@@ -111,11 +112,13 @@ export default function WeeklyDropAlbumCard({
     >
       <div className={styles.coverWrap}>
         {item.album.coverUrl ? (
-          <img
+          <Image
             className={styles.cover}
             src={item.album.coverUrl}
             alt={`${item.album.title} cover`}
-            loading="lazy"
+            width={256}
+            height={256}
+            unoptimized
           />
         ) : (
           <div className={styles.coverFallback}>No Cover</div>

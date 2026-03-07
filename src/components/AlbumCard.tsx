@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 import { removeFavorite, saveFavorite } from '@/lib/favorites/client';
@@ -130,7 +131,14 @@ export default function AlbumCard({
     <article className={styles.card}>
       <div className={styles.coverWrap}>
         {coverUrl ? (
-          <img className={styles.cover} src={coverUrl} alt={`${title} album cover`} loading="lazy" />
+          <Image
+            className={styles.cover}
+            src={coverUrl}
+            alt={`${title} album cover`}
+            width={256}
+            height={256}
+            unoptimized
+          />
         ) : (
           <div className={styles.coverFallback}>No Cover</div>
         )}

@@ -39,11 +39,9 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result.ok) {
+    const failure = result as { ok: false; error: string };
     return NextResponse.json(
-      {
-        ok: false,
-        error: result.error,
-      },
+      { ok: false, error: failure.error },
       { status: 200 }
     );
   }

@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import type { OnboardingAlbum } from './types';
 
 import styles from './AlbumPreviewCard.module.css';
@@ -17,7 +19,14 @@ export default function AlbumPreviewCard({
     <article className={styles.card}>
       <div className={styles.coverWrap}>
         {album.coverUrl ? (
-          <img className={styles.cover} src={album.coverUrl} alt={`${album.title} cover`} />
+          <Image
+            className={styles.cover}
+            src={album.coverUrl}
+            alt={`${album.title} cover`}
+            width={256}
+            height={256}
+            unoptimized
+          />
         ) : (
           <div className={styles.coverFallback}>No Cover</div>
         )}

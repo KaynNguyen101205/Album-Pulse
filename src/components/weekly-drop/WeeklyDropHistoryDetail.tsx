@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import type { WeeklyDrop } from '@/types/weekly-drop';
 import styles from './WeeklyDropHistoryDetail.module.css';
 
@@ -39,11 +41,13 @@ export default function WeeklyDropHistoryDetail({ drop }: WeeklyDropHistoryDetai
           <article className={styles.card} key={item.id}>
             <div className={styles.coverWrap}>
               {item.album.coverUrl ? (
-                <img
+                <Image
                   className={styles.cover}
                   src={item.album.coverUrl}
                   alt={`${item.album.title} cover`}
-                  loading="lazy"
+                  width={256}
+                  height={256}
+                  unoptimized
                 />
               ) : (
                 <div className={styles.coverFallback}>No Cover</div>
