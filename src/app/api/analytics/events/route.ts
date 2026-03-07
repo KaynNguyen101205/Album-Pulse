@@ -18,7 +18,9 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return parseWithSchema(analyticsEventBodySchema, {}).response;
+    const parsed = parseWithSchema(analyticsEventBodySchema, {});
+    if (!parsed.ok) return parsed.response;
+    return validationError('Invalid JSON body.', { fieldErrors: {}, formErrors: [] });
   }
   const parsed = parseWithSchema(analyticsEventBodySchema, body);
   if (!parsed.ok) return parsed.response;
