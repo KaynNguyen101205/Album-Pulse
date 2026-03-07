@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { requireSession } from '@/lib/session';
+import { generateWeeklyDropForUser } from '@/server/services/generateWeeklyDrop';
 
 const MINIMUM_ALBUMS = 3;
 
@@ -250,6 +251,11 @@ export async function POST(request: NextRequest) {
         onboardingCompletedAt: now,
       },
     });
+  });
+
+  // First weekly drop for new user: generate for current week (idempotent). Do not block response.
+  generateWeeklyDropForUser(nguoiDungId).catch((err) => {
+    console.warn('[onboarding/complete] first weekly drop generation failed', nguoiDungId, err);
   });
 
   return NextResponse.json({

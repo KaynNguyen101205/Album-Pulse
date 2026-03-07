@@ -16,7 +16,9 @@
     "embed:albums": "npx tsx scripts/embed-albums.ts",
     "inspect:similar": "npx tsx scripts/inspect-similar.ts",
     "list:users": "npx tsx scripts/list-users.ts",
-    "seed:test-user": "npx tsx scripts/seed-test-user.ts"
+    "seed:test-user": "npx tsx scripts/seed-test-user.ts",
+    "seed:more-albums": "npx tsx scripts/seed-more-albums.ts",
+    "cron:weekly-drop": "npx tsx scripts/run-weekly-drop-cron.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.0",
