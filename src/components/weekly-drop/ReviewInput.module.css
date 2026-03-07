@@ -1,0 +1,28 @@
+.wrap {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.34rem;
+}
+
+.label {
+  color: #1f2f43;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.textarea {
+  width: 100%;
+  border-radius: 0.7rem;
+  border: 1px solid #c7d7e7;
+  background: #fbfdff;
+  color: #0f172a;
+  padding: 0.58rem 0.65rem;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.textarea:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+}

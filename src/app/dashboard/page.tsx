@@ -252,6 +252,9 @@ export default function DashboardPage() {
         <p className={styles.subtitle}>
           Fresh album suggestions based on your Spotify listening history.
         </p>
+        <a className={styles.weeklyDropLink} href="/weekly-drop">
+          Open Weekly Drop
+        </a>
         {dotGoiYId ? <p className={styles.runId}>Run: {dotGoiYId}</p> : null}
       </header>
 

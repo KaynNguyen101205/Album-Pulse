@@ -1,0 +1,63 @@
+.page {
+  min-height: 100vh;
+  padding: 1.2rem;
+  font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 92% -12%, rgba(16, 185, 129, 0.16), transparent 40%),
+    radial-gradient(circle at -8% 112%, rgba(59, 130, 246, 0.19), transparent 38%),
+    linear-gradient(160deg, #f6fafc 0%, #edf4ff 55%, #f6fbf8 100%);
+}
+
+.header {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.title {
+  margin: 0;
+  color: #0b1323;
+  font-size: 2rem;
+  letter-spacing: 0.01em;
+}
+
+.subtitle {
+  margin: 0;
+  color: #3c4e64;
+  max-width: 42rem;
+  font-size: 0.95rem;
+}
+
+.historyLink {
+  width: fit-content;
+  margin-top: 0.15rem;
+  border: 1px solid #b9ccdf;
+  border-radius: 0.66rem;
+  background: #f8fbff;
+  color: #153b63;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 0.38rem 0.62rem;
+}
+
+.errorWrap {
+  margin-top: 1rem;
+}
+
+.emptyWrap {
+  margin-top: 1rem;
+  min-height: 42vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding: 1.7rem 2rem;
+  }
+
+  .title {
+    font-size: 2.2rem;
+  }
+}

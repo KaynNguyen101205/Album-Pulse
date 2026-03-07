@@ -1,0 +1,94 @@
+.wrap {
+  border: 1px solid #dbe6f2;
+  border-radius: 0.95rem;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  padding: 0.8rem;
+}
+
+.header {
+  margin-bottom: 0.68rem;
+}
+
+.title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.02rem;
+}
+
+.subtitle {
+  margin: 0.28rem 0 0;
+  color: #4f637a;
+  font-size: 0.82rem;
+}
+
+.grid {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.card {
+  border: 1px solid #deebf6;
+  border-radius: 0.82rem;
+  overflow: hidden;
+  background: #f8fbff;
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+}
+
+.coverWrap {
+  background: #e6edf7;
+  aspect-ratio: 1 / 1;
+}
+
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coverFallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  color: #53687f;
+}
+
+.body {
+  padding: 0.55rem 0.6rem;
+}
+
+.albumTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.92rem;
+}
+
+.artist {
+  margin: 0.2rem 0 0;
+  color: #2f425a;
+  font-size: 0.82rem;
+}
+
+.reason {
+  margin: 0.32rem 0 0;
+  color: #41556e;
+  font-size: 0.78rem;
+}
+
+.meta {
+  margin: 0.34rem 0 0;
+  color: #334a64;
+  font-size: 0.76rem;
+  display: flex;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.notes {
+  margin: 0.28rem 0 0;
+  color: #243349;
+  font-size: 0.77rem;
+}

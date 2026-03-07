@@ -41,6 +41,8 @@ model User {
   reviews            AlbumReview[]
   events             UserEvent[]
   weeklyDrops        WeeklyDrop[]
+  weeklyDropFeedback WeeklyDropItemFeedback[]
+  analyticsEvents    AnalyticsEvent[]
 }
 
 model Session {
@@ -213,11 +215,52 @@ model WeeklyDropItem {
 
   weeklyDrop WeeklyDrop @relation(fields: [weeklyDropId], references: [id], onDelete: Cascade)
   album      Album      @relation(fields: [albumId], references: [id], onDelete: Restrict)
+  feedback   WeeklyDropItemFeedback[]
 
   @@unique([weeklyDropId, albumId])
   @@unique([weeklyDropId, rank])
   @@index([weeklyDropId])
   @@index([albumId])
+}
+
+model WeeklyDropItemFeedback {
+  id               String   @id
+  userId           String
+  weeklyDropItemId String
+  liked            Boolean?
+  disliked         Boolean?
+  skipped          Boolean?
+  saved            Boolean?
+  rating           Int?
+  reviewText       String?
+  alreadyListened  Boolean?
+  listenedNotes    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyDropItem WeeklyDropItem @relation(fields: [weeklyDropItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weeklyDropItemId])
+  @@index([userId, updatedAt])
+  @@index([weeklyDropItemId])
+}
+
+model AnalyticsEvent {
+  id               String   @id
+  eventName        String
+  userId           String
+  weeklyDropId     String?
+  weeklyDropItemId String?
+  metadata         Json?
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([eventName, createdAt])
+  @@index([userId, createdAt])
+  @@index([weeklyDropId, createdAt])
+  @@index([weeklyDropItemId, createdAt])
 }
 
 model ExternalCache {

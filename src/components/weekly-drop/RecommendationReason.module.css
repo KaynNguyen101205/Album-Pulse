@@ -1,0 +1,11 @@
+.reason {
+  margin: 0.45rem 0 0;
+  color: #243349;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.label {
+  color: #0f172a;
+  font-weight: 700;
+}
