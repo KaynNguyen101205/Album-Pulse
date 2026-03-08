@@ -86,12 +86,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const [candidates, context] = await Promise.all([
-      generateCandidatesForUser(userId, {
-        userPreferredTags: body.userPreferredTags,
-      }),
-      getRankingContextForUser(userId),
-    ]);
+    const context = await getRankingContextForUser(userId);
+    const candidates = await generateCandidatesForUser(userId, {
+      userPreferredTags: body.userPreferredTags,
+      suppressedAlbumIds: Object.keys(context.suppressionByAlbum ?? {}),
+      suppressedArtistNames: Object.keys(context.suppressionByArtist ?? {}),
+      suppressedTags: Object.keys(context.suppressionByTag ?? {}),
+      recentArtistCounts: context.recentArtistCounts ?? {},
+    });
 
     if (candidates.length === 0) {
       return NextResponse.json({

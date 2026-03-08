@@ -93,6 +93,30 @@ export const weeklyDropFeedbackPatchSchema = z
     reviewText: z.string().max(4000).nullable().optional(),
     alreadyListened: z.boolean().nullable().optional(),
     listenedNotes: z.string().max(2000).nullable().optional(),
+    notInterestedReason: z
+      .enum([
+        'NOT_MY_GENRE',
+        'DONT_LIKE_ARTIST',
+        'ALREADY_KNOW_ALBUM',
+        'TOO_SIMILAR_RECENT',
+        'MOOD_MISMATCH',
+        'OTHER',
+      ])
+      .nullable()
+      .optional(),
+    notInterestedOtherText: z.string().max(500).nullable().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (
+      value.notInterestedOtherText &&
+      value.notInterestedReason !== 'OTHER'
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['notInterestedOtherText'],
+        message: 'Other reason text requires notInterestedReason=OTHER.',
+      });
+    }
   })
   .strict();
 
@@ -111,6 +135,21 @@ export const analyticsEventBodySchema = z.object({
 });
 
 export type AnalyticsEventBody = z.infer<typeof analyticsEventBodySchema>;
+
+// ----- Weekly metrics query -----
+export const weeklyDropMetricsQuerySchema = z.object({
+  weeks: z
+    .string()
+    .optional()
+    .transform((v) => (v?.trim() ? Number.parseInt(v, 10) : 8))
+    .pipe(z.number().int().min(1).max(26)),
+  userId: z
+    .string()
+    .optional()
+    .transform((v) => (v?.trim() ? v.trim() : undefined)),
+});
+
+export type WeeklyDropMetricsQuery = z.infer<typeof weeklyDropMetricsQuerySchema>;
 
 // ----- Params -----
 export const itemIdParamSchema = z.object({

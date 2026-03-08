@@ -1,0 +1,51 @@
+.wrap {
+  margin-top: 0.55rem;
+  display: grid;
+  gap: 0.36rem;
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #2e4158;
+}
+
+.select {
+  width: 100%;
+  border: 1px solid #c7d6e6;
+  border-radius: 0.55rem;
+  background: #ffffff;
+  color: #122033;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.5rem;
+}
+
+.otherWrap {
+  margin-top: 0.12rem;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.otherLabel {
+  font-size: 0.75rem;
+  color: #40556d;
+  font-weight: 600;
+}
+
+.otherInput {
+  width: 100%;
+  resize: vertical;
+  min-height: 2.6rem;
+  border: 1px solid #c9d9e7;
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.8rem;
+  color: #14263b;
+  background: #fdfefe;
+}
+
+.select:disabled,
+.otherInput:disabled {
+  background: #eef3f8;
+  color: #74879c;
+}

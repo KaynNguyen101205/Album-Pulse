@@ -3,10 +3,13 @@
  */
 
 export const SCORING_WEIGHTS = {
-  similarity: 0.35,
-  hiddenGem: 0.25,
-  novelty: 0.2,
-  diversity: 0.2,
+  similarity: 0.28,
+  hiddenGem: 0.2,
+  novelty: 0.14,
+  diversity: 0.16,
+  feedbackAffinity: 0.22,
+  suppressionPenalty: 0.2,
+  repeatPenalty: 0.16,
 } as const;
 
 /** Cosine distance to similarity score: distance 0 -> 1, distance ~1 -> ~0. */
@@ -35,3 +38,6 @@ export const RECOMMENDATIONS_COUNT = 5;
 
 /** MMR lambda: 1 = pure relevance, 0 = pure diversity. */
 export const MMR_LAMBDA = 0.7;
+
+/** Soft suppression starts reducing score once strength is above this threshold. */
+export const SOFT_SUPPRESSION_THRESHOLD = 0.45;

@@ -9,9 +9,9 @@ import type {
 import {
   SCORING_WEIGHTS,
   RECOMMENDATIONS_COUNT,
-  MAX_ALBUMS_PER_ARTIST_IN_FINAL,
   MIN_TAGS_IN_FINAL,
   MMR_LAMBDA,
+  SOFT_SUPPRESSION_THRESHOLD,
 } from './config';
 import { similarityScore } from './similarity';
 import { hiddenGemScore } from './hiddenGems';
@@ -23,12 +23,71 @@ import {
   getTagKeys,
   type UserFavoriteContext,
 } from './diversity';
+import { repeatPenaltyFromRecentCounts } from '@/lib/recommendation/cooldowns';
+import { normalizeToken } from '@/lib/recommendation/feedback-weights';
 
 export type RankAlbumsContext = {
   recentlyRecommendedAlbumIds: string[];
   userFavoriteArtistNames: string[];
   userFavoriteTags: string[];
+  profileArtistWeights?: Record<string, number>;
+  profileTagWeights?: Record<string, number>;
+  profileAlbumWeights?: Record<string, number>;
+  suppressionByArtist?: Record<string, number>;
+  suppressionByTag?: Record<string, number>;
+  suppressionByAlbum?: Record<string, number>;
+  recentArtistCounts?: Record<string, number>;
+  recentTagCounts?: Record<string, number>;
 };
+
+function feedbackAffinityScore(
+  candidate: CandidateForRanking,
+  context: RankAlbumsContext
+): number {
+  const artistWeights = context.profileArtistWeights ?? {};
+  const tagWeights = context.profileTagWeights ?? {};
+  const albumWeights = context.profileAlbumWeights ?? {};
+
+  const artistWeight = artistWeights[normalizeToken(candidate.artistName)] ?? 0;
+  const albumWeight = albumWeights[normalizeToken(candidate.albumId)] ?? 0;
+  let tagWeight = 0;
+  let countedTags = 0;
+  for (const rawTag of candidate.tags) {
+    const value = tagWeights[normalizeToken(rawTag)];
+    if (typeof value === 'number') {
+      tagWeight += value;
+      countedTags += 1;
+    }
+  }
+  const avgTagWeight = countedTags > 0 ? tagWeight / countedTags : 0;
+  const raw = albumWeight * 1.2 + artistWeight + avgTagWeight * 0.8;
+  return (Math.tanh(raw) + 1) / 2;
+}
+
+function suppressionPenaltyScore(
+  candidate: CandidateForRanking,
+  context: RankAlbumsContext
+): number {
+  const albumSuppression =
+    context.suppressionByAlbum?.[normalizeToken(candidate.albumId)] ?? 0;
+  const artistSuppression =
+    context.suppressionByArtist?.[normalizeToken(candidate.artistName)] ?? 0;
+
+  let tagSuppression = 0;
+  for (const tag of candidate.tags) {
+    tagSuppression = Math.max(
+      tagSuppression,
+      context.suppressionByTag?.[normalizeToken(tag)] ?? 0
+    );
+  }
+
+  const strongest = Math.max(albumSuppression, artistSuppression, tagSuppression);
+  if (strongest <= SOFT_SUPPRESSION_THRESHOLD) return 0;
+  return Math.min(
+    1,
+    (strongest - SOFT_SUPPRESSION_THRESHOLD) / (1 - SOFT_SUPPRESSION_THRESHOLD)
+  );
+}
 
 /**
  * Score all candidates and return scored list (with breakdown).
@@ -50,17 +109,36 @@ export function scoreCandidates(
     const hiddenGem = hiddenGemScore(candidate);
     const novelty = noveltyScore(candidate, noveltyCtx);
     const diversity = diversityScoreVsUser(candidate, userCtx);
+    const feedbackAffinity = feedbackAffinityScore(candidate, context);
+    const suppressionPenalty = suppressionPenaltyScore(candidate, context);
+    const repeatPenalty = repeatPenaltyFromRecentCounts({
+      artistNameOrId: candidate.artistName,
+      tags: candidate.tags,
+      recentArtistCounts: context.recentArtistCounts ?? {},
+      recentTagCounts: context.recentTagCounts ?? {},
+    });
 
     const score =
       SCORING_WEIGHTS.similarity * similarity +
       SCORING_WEIGHTS.hiddenGem * hiddenGem +
       SCORING_WEIGHTS.novelty * novelty +
-      SCORING_WEIGHTS.diversity * diversity;
+      SCORING_WEIGHTS.diversity * diversity +
+      SCORING_WEIGHTS.feedbackAffinity * feedbackAffinity -
+      SCORING_WEIGHTS.suppressionPenalty * suppressionPenalty -
+      SCORING_WEIGHTS.repeatPenalty * repeatPenalty;
 
     return {
       candidate,
       score,
-      breakdown: { similarity, hiddenGem, novelty, diversity },
+      breakdown: {
+        similarity,
+        hiddenGem,
+        novelty,
+        diversity,
+        feedbackAffinity,
+        suppressionPenalty,
+        repeatPenalty,
+      },
     };
   });
 }
@@ -119,6 +197,7 @@ function buildReasons(breakdown: ScoreBreakdown): RecommendationReason[] {
   if (breakdown.hiddenGem >= 0.6) reasons.push('hidden_gem');
   if (breakdown.novelty >= 0.6) reasons.push('novelty');
   if (breakdown.diversity >= 0.6) reasons.push('diversity');
+  if (breakdown.feedbackAffinity >= 0.62) reasons.push('feedback_affinity');
   if (reasons.length === 0) reasons.push('similarity');
   return reasons;
 }
@@ -163,6 +242,7 @@ function buildShortExplanation(
   if (reasons.includes('hidden_gem')) parts.push('a lesser-known pick');
   if (reasons.includes('novelty')) parts.push('something fresh for you');
   if (reasons.includes('diversity')) parts.push('adds variety');
+  if (reasons.includes('feedback_affinity')) parts.push('aligned with your recent feedback');
   return parts.length > 0 ? parts.join('; ') : 'Recommended for you';
 }
 

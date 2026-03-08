@@ -28,11 +28,12 @@ vi.mock('@/server/recs/scoring/rankAlbums', () => ({
 import { generateCandidatesForUser } from '@/server/recs/candidateGenerator';
 import { getRankingContextForUser } from '@/server/recs/getRankingContext';
 import { rankAlbums } from '@/server/recs/scoring/rankAlbums';
+import type { RankedRecommendation } from '@/server/recs/scoring/types';
 
 const userId = 'user-1';
 const fixedWeekStart = new Date(Date.UTC(2026, 2, 2, 0, 0, 0)); // 2026-03-02 Monday
 
-function oneRecommendation() {
+function oneRecommendation(): RankedRecommendation[] {
   return [
     {
       albumId: 'album-1',
@@ -44,7 +45,15 @@ function oneRecommendation() {
       coverUrl: null,
       rank: 1,
       score: 0.9,
-      breakdown: { similarity: 0.8, hiddenGem: 0.5, novelty: 1, diversity: 0.6 },
+      breakdown: {
+        similarity: 0.8,
+        hiddenGem: 0.5,
+        novelty: 1,
+        diversity: 0.6,
+        feedbackAffinity: 0.55,
+        suppressionPenalty: 0,
+        repeatPenalty: 0,
+      },
       explanation: {
         short: 'Similar to your favorites',
         reasons: ['similarity'],
@@ -99,11 +108,13 @@ describe('generateWeeklyDropForUser', () => {
 
     const r1 = await generateWeeklyDropForUser(userId, { weekStart: fixedWeekStart });
     expect(r1.ok).toBe(true);
+    if (!r1.ok) throw new Error('Expected successful generation');
     expect(r1.generated).toBe(true);
     expect(mockTransaction).toHaveBeenCalledTimes(1);
 
     const r2 = await generateWeeklyDropForUser(userId, { weekStart: fixedWeekStart });
     expect(r2.ok).toBe(true);
+    if (!r2.ok) throw new Error('Expected already_exists response');
     expect(r2.generated).toBe(false);
     expect((r2 as { reason: string }).reason).toBe('already_exists');
     expect(mockTransaction).toHaveBeenCalledTimes(1); // still 1, no second transaction
@@ -128,6 +139,7 @@ describe('generateWeeklyDropForUser', () => {
       force: true,
     });
     expect(r.ok).toBe(true);
+    if (!r.ok) throw new Error('Expected successful force generation');
     expect(r.generated).toBe(true);
     expect(deleteMany).toHaveBeenCalledWith({
       where: { weeklyDropId: 'drop-existing' },
@@ -172,6 +184,7 @@ describe('generateWeeklyDropForUser', () => {
 
     const r = await generateWeeklyDropForUser(userId, { weekStart: fixedWeekStart });
     expect(r.ok).toBe(true);
+    if (!r.ok) throw new Error('Expected successful generation');
     expect(r.weekKey).toBe('2026-03-02');
     expect(capturedData).not.toBeNull();
     expect(capturedData!.weekStart.getTime()).toBe(fixedWeekStart.getTime());

@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/lib/session', () => ({
+  getSessionUserId: vi.fn().mockResolvedValue('test-user'),
+}));
 
 import {
   FeedbackValidationError,
@@ -17,6 +21,8 @@ function emptyFeedback(): WeeklyDropFeedback {
     reviewText: null,
     alreadyListened: null,
     listenedNotes: null,
+    notInterestedReason: null,
+    notInterestedOtherText: null,
     updatedAt: null,
   };
 }
@@ -47,5 +53,18 @@ describe('mergeFeedbackState', () => {
     expect(next.disliked).toBe(false);
     expect(next.skipped).toBe(false);
     expect(next.reviewText).toBe('Nice');
+  });
+
+  it('clears notInterestedOtherText when reason is not OTHER', () => {
+    const current = {
+      ...emptyFeedback(),
+      notInterestedReason: 'OTHER' as const,
+      notInterestedOtherText: 'Not my mood',
+    };
+    const { next } = mergeFeedbackState(current, {
+      notInterestedReason: 'NOT_MY_GENRE',
+    });
+    expect(next.notInterestedReason).toBe('NOT_MY_GENRE');
+    expect(next.notInterestedOtherText).toBeNull();
   });
 });

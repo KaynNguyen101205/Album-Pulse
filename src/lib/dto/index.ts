@@ -63,6 +63,15 @@ export type WeeklyDropFeedbackDTO = {
   reviewText: string | null;
   alreadyListened: boolean | null;
   listenedNotes: string | null;
+  notInterestedReason:
+    | 'NOT_MY_GENRE'
+    | 'DONT_LIKE_ARTIST'
+    | 'ALREADY_KNOW_ALBUM'
+    | 'TOO_SIMILAR_RECENT'
+    | 'MOOD_MISMATCH'
+    | 'OTHER'
+    | null;
+  notInterestedOtherText: string | null;
   updatedAt: string | null;
 };
 
@@ -85,6 +94,40 @@ export type WeeklyDropHistoryResponseDTO = {
 export type FeedbackResponseDTO = {
   ok: true;
   feedback: WeeklyDropFeedbackDTO;
+};
+
+// ----- Weekly drop metrics -----
+export type WeeklyDropMetricDTO = {
+  weekStart: string;
+  scope: 'USER' | 'GLOBAL';
+  userId: string | null;
+  impressions: number;
+  clicks: number;
+  saves: number;
+  ratingsCount: number;
+  ratingsSum: number;
+  dislikes: number;
+  skips: number;
+  reviews: number;
+  notInterested: number;
+  ctr: number;
+  saveRate: number;
+  avgRating: number;
+  dislikeRate: number;
+  skipRate: number;
+  reviewRate: number;
+  notInterestedRate: number;
+};
+
+export type WeeklyDropMetricsSummaryDTO = {
+  ok: true;
+  weeks: number;
+  userMetrics: WeeklyDropMetricDTO[];
+  globalMetrics: WeeklyDropMetricDTO[];
+  comparisons: {
+    user: Record<string, number>;
+    global: Record<string, number>;
+  };
 };
 
 // ----- Events -----

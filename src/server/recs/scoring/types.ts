@@ -9,6 +9,9 @@ export type ScoreBreakdown = {
   hiddenGem: number;
   novelty: number;
   diversity: number;
+  feedbackAffinity: number;
+  suppressionPenalty: number;
+  repeatPenalty: number;
 };
 
 /** Combined score and breakdown for one candidate. */
@@ -23,7 +26,8 @@ export type RecommendationReason =
   | 'similarity'
   | 'hidden_gem'
   | 'novelty'
-  | 'diversity';
+  | 'diversity'
+  | 'feedback_affinity';
 
 /** User preference that matched (for explanation). */
 export type MatchedPreference = {

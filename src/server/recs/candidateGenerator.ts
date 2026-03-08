@@ -1,4 +1,7 @@
 import { prisma } from '@/lib/prisma';
+import { FEEDBACK_LOOP_CONFIG } from '@/lib/recommendation/config';
+import { isArtistOverRepeatCap } from '@/lib/recommendation/cooldowns';
+import { normalizeToken } from '@/lib/recommendation/feedback-weights';
 import { getVectorCandidates } from './sources/vectorSource';
 import { getArtistExpansionCandidates } from './sources/artistExpansionSource';
 import { getTagExpansionCandidates } from './sources/tagExpansionSource';
@@ -121,8 +124,13 @@ async function getExcludedAlbumIds(userId: string): Promise<Set<string>> {
   const disliked = await prisma.$queryRawUnsafe<
     Array<{ albumId: string }>
   >(
-    `SELECT "albumId" FROM "UserEvent" WHERE "userId" = $1 AND "type" = 'DISLIKE' AND "albumId" IS NOT NULL`,
-    userId
+    `SELECT "albumId" FROM "UserEvent"
+     WHERE "userId" = $1
+       AND "type" = 'DISLIKE'
+       AND "albumId" IS NOT NULL
+       AND "createdAt" >= CURRENT_DATE - (($2::text || ' days')::interval)`,
+    userId,
+    String(FEEDBACK_LOOP_CONFIG.artistSuppressionWeeks * 7)
   );
   disliked.forEach((r) => excluded.add(r.albumId!));
 
@@ -176,9 +184,27 @@ export async function generateCandidatesForUser(
     weekStart?: Date;
     maxCandidates?: number;
     userPreferredTags?: string[];
+    suppressedAlbumIds?: string[];
+    suppressedArtistNames?: string[];
+    suppressedTags?: string[];
+    recentArtistCounts?: Record<string, number>;
+    artistRepeatCapInWindow?: number;
   }
 ): Promise<CandidateAlbum[]> {
   const maxCandidates = options?.maxCandidates ?? TARGET_MAX;
+  const suppressedAlbumIds = new Set(
+    (options?.suppressedAlbumIds ?? []).map((value) => normalizeToken(value)).filter(Boolean)
+  );
+  const suppressedArtistNames = new Set(
+    (options?.suppressedArtistNames ?? []).map((value) => normalizeToken(value)).filter(Boolean)
+  );
+  const suppressedTags = new Set(
+    (options?.suppressedTags ?? []).map((value) => normalizeToken(value)).filter(Boolean)
+  );
+  const recentArtistCounts = options?.recentArtistCounts ?? {};
+  const artistRepeatCapInWindow =
+    options?.artistRepeatCapInWindow ??
+    FEEDBACK_LOOP_CONFIG.artistRepeatCapInWindow;
 
   const favorites = await prisma.$queryRawUnsafe<
     Array<{
@@ -236,6 +262,10 @@ export async function generateCandidatesForUser(
 
   for (const c of vectorCands) {
     if (excludedIds.has(c.albumId)) continue;
+    if (suppressedAlbumIds.has(normalizeToken(c.albumId))) continue;
+    if (suppressedArtistNames.has(normalizeToken(c.artistName))) continue;
+    if (c.tags.some((tag) => suppressedTags.has(normalizeToken(tag)))) continue;
+    if (isArtistOverRepeatCap(c.artistName, recentArtistCounts, artistRepeatCapInWindow)) continue;
     if (!c.title?.trim() || !c.artistName?.trim()) continue;
     const key = getDedupeKey(c.mbid, c.title, c.artistName, c.releaseYear);
     const existing = byDedupeKey.get(key);
@@ -248,6 +278,10 @@ export async function generateCandidatesForUser(
 
   for (const c of artistCands) {
     if (excludedIds.has(c.albumId)) continue;
+    if (suppressedAlbumIds.has(normalizeToken(c.albumId))) continue;
+    if (suppressedArtistNames.has(normalizeToken(c.artistName))) continue;
+    if (c.tags.some((tag) => suppressedTags.has(normalizeToken(tag)))) continue;
+    if (isArtistOverRepeatCap(c.artistName, recentArtistCounts, artistRepeatCapInWindow)) continue;
     if (!c.title?.trim() || !c.artistName?.trim()) continue;
     const key = getDedupeKey(c.mbid, c.title, c.artistName, c.releaseYear);
     const existing = byDedupeKey.get(key);
@@ -260,6 +294,10 @@ export async function generateCandidatesForUser(
 
   for (const c of tagCands) {
     if (excludedIds.has(c.albumId)) continue;
+    if (suppressedAlbumIds.has(normalizeToken(c.albumId))) continue;
+    if (suppressedArtistNames.has(normalizeToken(c.artistName))) continue;
+    if (c.tags.some((tag) => suppressedTags.has(normalizeToken(tag)))) continue;
+    if (isArtistOverRepeatCap(c.artistName, recentArtistCounts, artistRepeatCapInWindow)) continue;
     if (!c.title?.trim() || !c.artistName?.trim()) continue;
     const key = getDedupeKey(c.mbid, c.title, c.artistName, c.releaseYear);
     const existing = byDedupeKey.get(key);

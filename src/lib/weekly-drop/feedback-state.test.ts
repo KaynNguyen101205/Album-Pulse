@@ -13,6 +13,8 @@ function baseFeedback(): WeeklyDropFeedback {
     reviewText: null,
     alreadyListened: null,
     listenedNotes: null,
+    notInterestedReason: null,
+    notInterestedOtherText: null,
     updatedAt: null,
   };
 }
@@ -52,5 +54,20 @@ describe('applyFeedbackPatchState', () => {
 
     const { changed } = applyFeedbackPatchState(current, { saved: true });
     expect(changed).toBe(false);
+  });
+
+  it('keeps OTHER text only for OTHER reason', () => {
+    const current = baseFeedback();
+    const { next } = applyFeedbackPatchState(current, {
+      notInterestedReason: 'OTHER',
+      notInterestedOtherText: 'Not my vibe this week',
+    });
+    expect(next.notInterestedReason).toBe('OTHER');
+    expect(next.notInterestedOtherText).toBe('Not my vibe this week');
+
+    const downgraded = applyFeedbackPatchState(next, {
+      notInterestedReason: 'NOT_MY_GENRE',
+    }).next;
+    expect(downgraded.notInterestedOtherText).toBeNull();
   });
 });

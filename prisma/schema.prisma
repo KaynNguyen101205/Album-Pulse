@@ -27,6 +27,32 @@ enum UserEventType {
   VIEW
 }
 
+enum NotInterestedReason {
+  NOT_MY_GENRE
+  DONT_LIKE_ARTIST
+  ALREADY_KNOW_ALBUM
+  TOO_SIMILAR_RECENT
+  MOOD_MISMATCH
+  OTHER
+}
+
+enum SuppressionTargetType {
+  ARTIST
+  TAG
+  ALBUM
+}
+
+enum RecomputeRunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+enum WeeklyMetricScope {
+  USER
+  GLOBAL
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String?   @unique
@@ -46,6 +72,10 @@ model User {
   weeklyDrops         WeeklyDrop[]
   weeklyDropFeedback  WeeklyDropItemFeedback[]
   analyticsEvents     AnalyticsEvent[]
+  preferenceProfile   UserPreferenceProfile?
+  suppressions        UserPreferenceSuppression[]
+  profileRecomputeRuns UserProfileRecomputeRun[]
+  weeklyMetrics       WeeklyDropMetric[]
 }
 
 model Account {
@@ -277,6 +307,8 @@ model WeeklyDropItemFeedback {
   reviewText       String?
   alreadyListened  Boolean?
   listenedNotes    String?
+  notInterestedReason    NotInterestedReason?
+  notInterestedOtherText String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -286,6 +318,97 @@ model WeeklyDropItemFeedback {
   @@unique([userId, weeklyDropItemId])
   @@index([userId, updatedAt])
   @@index([weeklyDropItemId])
+}
+
+model UserPreferenceProfile {
+  id                    String   @id
+  userId                String   @unique
+  profileVersion        Int      @default(1)
+  sourceWindowWeeks     Int      @default(12)
+  artistWeights         Json
+  tagWeights            Json
+  albumWeights          Json
+  metadata              Json?
+  lastRecomputedAt      DateTime?
+  lastRecomputedWeekStart DateTime? @db.Date
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastRecomputedWeekStart])
+}
+
+model UserPreferenceSuppression {
+  id             String                @id
+  userId         String
+  targetType     SuppressionTargetType
+  targetValue    String
+  reason         NotInterestedReason?
+  strength       Float                 @default(1)
+  sourceWeekStart DateTime?           @db.Date
+  expiresAt      DateTime
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetValue])
+  @@index([userId, expiresAt])
+  @@index([targetType, targetValue])
+}
+
+model UserProfileRecomputeRun {
+  id                    String             @id
+  userId                String
+  weekStart             DateTime           @db.Date
+  profileVersion        Int                @default(1)
+  status                RecomputeRunStatus
+  processedFeedbackCount Int               @default(0)
+  generatedSuppressions Int                @default(0)
+  message               String?
+  startedAt             DateTime           @default(now())
+  completedAt           DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart, profileVersion])
+  @@index([status, startedAt])
+  @@index([userId, weekStart])
+}
+
+model WeeklyDropMetric {
+  id           String           @id
+  metricKey    String           @unique
+  scope        WeeklyMetricScope
+  userId       String?
+  weekStart    DateTime         @db.Date
+  weeklyDropId String?
+  impressions  Int              @default(0)
+  clicks       Int              @default(0)
+  saves        Int              @default(0)
+  ratingsCount Int              @default(0)
+  ratingsSum   Int              @default(0)
+  dislikes     Int              @default(0)
+  skips        Int              @default(0)
+  reviews      Int              @default(0)
+  notInterested Int             @default(0)
+  ctr          Float            @default(0)
+  saveRate     Float            @default(0)
+  avgRating    Float            @default(0)
+  dislikeRate  Float            @default(0)
+  skipRate     Float            @default(0)
+  reviewRate   Float            @default(0)
+  notInterestedRate Float       @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([scope, weekStart])
+  @@index([userId, weekStart])
 }
 
 model AnalyticsEvent {

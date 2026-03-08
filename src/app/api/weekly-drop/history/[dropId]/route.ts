@@ -7,7 +7,6 @@ import {
 import { dropIdParamSchema } from '@/lib/validation/schemas';
 import { parseWithSchema } from '@/lib/validation/parse';
 import { unauthorized, notFound, internalError } from '@/lib/api/errors';
-import type { WeeklyDropDTO } from '@/lib/dto';
 
 /**
  * GET /api/weekly-drop/history/:dropId
@@ -26,7 +25,7 @@ export async function GET(
 
   try {
     const drop = await getWeeklyDropHistoryDetail(dropId);
-    return NextResponse.json({ ok: true, drop: drop as WeeklyDropDTO });
+    return NextResponse.json({ ok: true, drop });
   } catch (error) {
     if (error instanceof NotLoggedInError) return unauthorized();
     if (error instanceof WeeklyDropNotFoundError) return notFound('Weekly drop not found.');

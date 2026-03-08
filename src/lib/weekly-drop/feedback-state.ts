@@ -29,6 +29,9 @@ export function applyFeedbackPatchState(
   current: WeeklyDropFeedback,
   patch: WeeklyDropFeedbackPatch
 ): { next: WeeklyDropFeedback; changed: boolean } {
+  const normalizedReason = patch.notInterestedReason ?? null;
+  const normalizedOtherText = normalizeString(patch.notInterestedOtherText) ?? null;
+
   const next: WeeklyDropFeedback = {
     ...current,
     ...(patch.liked !== undefined ? { liked: patch.liked } : {}),
@@ -41,11 +44,20 @@ export function applyFeedbackPatchState(
     ...(patch.listenedNotes !== undefined
       ? { listenedNotes: normalizeString(patch.listenedNotes) ?? null }
       : {}),
+    ...(patch.notInterestedReason !== undefined
+      ? { notInterestedReason: normalizedReason }
+      : {}),
+    ...(patch.notInterestedOtherText !== undefined
+      ? { notInterestedOtherText: normalizedOtherText }
+      : {}),
   };
 
   const exclusive = enforceReactionExclusivity(next, patch);
   if (exclusive.alreadyListened === false) {
     exclusive.listenedNotes = null;
+  }
+  if (exclusive.notInterestedReason !== 'OTHER') {
+    exclusive.notInterestedOtherText = null;
   }
 
   const changed =
@@ -56,7 +68,9 @@ export function applyFeedbackPatchState(
     exclusive.rating !== current.rating ||
     exclusive.reviewText !== current.reviewText ||
     exclusive.alreadyListened !== current.alreadyListened ||
-    exclusive.listenedNotes !== current.listenedNotes;
+    exclusive.listenedNotes !== current.listenedNotes ||
+    exclusive.notInterestedReason !== current.notInterestedReason ||
+    exclusive.notInterestedOtherText !== current.notInterestedOtherText;
 
   return { next: exclusive, changed };
 }

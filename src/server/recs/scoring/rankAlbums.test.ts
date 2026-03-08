@@ -33,6 +33,14 @@ const defaultContext = {
   recentlyRecommendedAlbumIds: [] as string[],
   userFavoriteArtistNames: ['Radiohead'],
   userFavoriteTags: ['rock'],
+  profileArtistWeights: {},
+  profileTagWeights: {},
+  profileAlbumWeights: {},
+  suppressionByArtist: {},
+  suppressionByTag: {},
+  suppressionByAlbum: {},
+  recentArtistCounts: {},
+  recentTagCounts: {},
 };
 
 describe('scoreCandidates', () => {
@@ -61,7 +69,15 @@ describe('selectTopN', () => {
     ].map((c) => ({
       candidate: c,
       score: 0.8,
-      breakdown: { similarity: 0.8, hiddenGem: 0.5, novelty: 0.5, diversity: 0.5 },
+      breakdown: {
+        similarity: 0.8,
+        hiddenGem: 0.5,
+        novelty: 0.5,
+        diversity: 0.5,
+        feedbackAffinity: 0.5,
+        suppressionPenalty: 0,
+        repeatPenalty: 0,
+      },
     }));
     const selected = selectTopN(candidates, 5);
     const artists = selected.map((s) => s.candidate.artistName);
@@ -77,7 +93,15 @@ describe('selectTopN', () => {
     ].map((c) => ({
       candidate: c,
       score: 0.5,
-      breakdown: { similarity: 0.5, hiddenGem: 0.5, novelty: 0.5, diversity: 0.5 },
+      breakdown: {
+        similarity: 0.5,
+        hiddenGem: 0.5,
+        novelty: 0.5,
+        diversity: 0.5,
+        feedbackAffinity: 0.5,
+        suppressionPenalty: 0,
+        repeatPenalty: 0,
+      },
     }));
     expect(selectTopN(candidates, 5)).toHaveLength(3);
   });
@@ -94,6 +118,9 @@ describe('buildRecommendations', () => {
           hiddenGem: 0.5,
           novelty: 0.5,
           diversity: 0.5,
+          feedbackAffinity: 0.5,
+          suppressionPenalty: 0,
+          repeatPenalty: 0,
         },
       },
     ];

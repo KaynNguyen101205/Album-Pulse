@@ -27,7 +27,15 @@ function scored(
       ...overrides,
     },
     score: 0.5,
-    breakdown: { similarity: 0.5, hiddenGem: 0.5, novelty: 0.5, diversity: 0.5 },
+    breakdown: {
+      similarity: 0.5,
+      hiddenGem: 0.5,
+      novelty: 0.5,
+      diversity: 0.5,
+      feedbackAffinity: 0.5,
+      suppressionPenalty: 0,
+      repeatPenalty: 0,
+    },
   };
 }
 

@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { getSessionUserId } from '@/lib/session';
 import type {
+  NotInterestedReason,
   WeeklyDrop,
   WeeklyDropFeedback,
   WeeklyDropFeedbackPatch,
@@ -37,6 +38,8 @@ type ItemRow = {
   reviewText: string | null;
   alreadyListened: boolean | null;
   listenedNotes: string | null;
+  notInterestedReason: NotInterestedReason | null;
+  notInterestedOtherText: string | null;
   feedbackUpdatedAt: Date | null;
 };
 
@@ -49,6 +52,8 @@ type FeedbackRow = {
   reviewText: string | null;
   alreadyListened: boolean | null;
   listenedNotes: string | null;
+  notInterestedReason: NotInterestedReason | null;
+  notInterestedOtherText: string | null;
   updatedAt: Date | null;
 };
 
@@ -179,6 +184,8 @@ function normalizeFeedbackFromRow(row: ItemRow | FeedbackRow): WeeklyDropFeedbac
     reviewText: row.reviewText ?? null,
     alreadyListened: row.alreadyListened ?? null,
     listenedNotes: row.listenedNotes ?? null,
+    notInterestedReason: row.notInterestedReason ?? null,
+    notInterestedOtherText: row.notInterestedOtherText ?? null,
     updatedAt: updatedAt ? updatedAt.toISOString() : null,
   };
 }
@@ -207,6 +214,24 @@ function parseTextPatch(
     );
   }
   return normalized;
+}
+
+function parseNotInterestedReasonPatch(
+  value: unknown
+): NotInterestedReason | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (
+    value === 'NOT_MY_GENRE' ||
+    value === 'DONT_LIKE_ARTIST' ||
+    value === 'ALREADY_KNOW_ALBUM' ||
+    value === 'TOO_SIMILAR_RECENT' ||
+    value === 'MOOD_MISMATCH' ||
+    value === 'OTHER'
+  ) {
+    return value;
+  }
+  throw new FeedbackValidationError('Invalid notInterestedReason value.');
 }
 
 function parseRatingPatch(value: unknown): number | null | undefined {
@@ -263,6 +288,8 @@ type NormalizedPatch = {
   reviewText?: string | null;
   alreadyListened?: boolean | null;
   listenedNotes?: string | null;
+  notInterestedReason?: NotInterestedReason | null;
+  notInterestedOtherText?: string | null;
 };
 
 function normalizePatch(patch: WeeklyDropFeedbackPatch): NormalizedPatch {
@@ -280,6 +307,11 @@ function normalizePatch(patch: WeeklyDropFeedbackPatch): NormalizedPatch {
     listenedNotes: parseTextPatch(patch.listenedNotes, {
       maxLength: 2000,
       fieldName: 'listenedNotes',
+    }),
+    notInterestedReason: parseNotInterestedReasonPatch(patch.notInterestedReason),
+    notInterestedOtherText: parseTextPatch(patch.notInterestedOtherText, {
+      maxLength: 500,
+      fieldName: 'notInterestedOtherText',
     }),
   };
 }
@@ -310,6 +342,13 @@ export function mergeFeedbackState(
   if (normalizedNext.alreadyListened === false) {
     if (normalizedNext.listenedNotes !== null) changedKeys.add('listenedNotes');
     normalizedNext.listenedNotes = null;
+  }
+
+  if (normalizedNext.notInterestedReason !== 'OTHER') {
+    if (normalizedNext.notInterestedOtherText !== null) {
+      changedKeys.add('notInterestedOtherText');
+    }
+    normalizedNext.notInterestedOtherText = null;
   }
 
   return { next: normalizedNext, changedKeys };
@@ -364,6 +403,8 @@ async function fetchDropItems(
       wdf."reviewText" AS "reviewText",
       wdf."alreadyListened" AS "alreadyListened",
       wdf."listenedNotes" AS "listenedNotes",
+      wdf."notInterestedReason" AS "notInterestedReason",
+      wdf."notInterestedOtherText" AS "notInterestedOtherText",
       wdf."updatedAt" AS "feedbackUpdatedAt"
     FROM "WeeklyDropItem" wdi
     JOIN "Album" a ON a."id" = wdi."albumId"
@@ -393,6 +434,8 @@ async function fetchDropItems(
       wdf."reviewText",
       wdf."alreadyListened",
       wdf."listenedNotes",
+      wdf."notInterestedReason",
+      wdf."notInterestedOtherText",
       wdf."updatedAt",
       ufa."albumId"
     ORDER BY wdi."rank" ASC, wdi."id" ASC
@@ -469,6 +512,8 @@ async function getExistingFeedback(
       wdf."reviewText" AS "reviewText",
       wdf."alreadyListened" AS "alreadyListened",
       wdf."listenedNotes" AS "listenedNotes",
+      wdf."notInterestedReason" AS "notInterestedReason",
+      wdf."notInterestedOtherText" AS "notInterestedOtherText",
       wdf."updatedAt" AS "updatedAt"
     FROM "WeeklyDropItemFeedback" wdf
     WHERE wdf."weeklyDropItemId" = $1 AND wdf."userId" = $2
@@ -489,6 +534,8 @@ async function getExistingFeedback(
       reviewText: null,
       alreadyListened: null,
       listenedNotes: null,
+      notInterestedReason: null,
+      notInterestedOtherText: null,
       updatedAt: null,
     };
   }
@@ -610,11 +657,13 @@ export async function updateWeeklyDropItemFeedback(
         "reviewText",
         "alreadyListened",
         "listenedNotes",
+        "notInterestedReason",
+        "notInterestedOtherText",
         "createdAt",
         "updatedAt"
       )
       VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
       )
       ON CONFLICT ("userId", "weeklyDropItemId")
       DO UPDATE SET
@@ -626,6 +675,8 @@ export async function updateWeeklyDropItemFeedback(
         "reviewText" = EXCLUDED."reviewText",
         "alreadyListened" = EXCLUDED."alreadyListened",
         "listenedNotes" = EXCLUDED."listenedNotes",
+        "notInterestedReason" = EXCLUDED."notInterestedReason",
+        "notInterestedOtherText" = EXCLUDED."notInterestedOtherText",
         "updatedAt" = NOW()
       `,
       randomUUID(),
@@ -638,7 +689,9 @@ export async function updateWeeklyDropItemFeedback(
       merged.next.rating,
       merged.next.reviewText,
       merged.next.alreadyListened,
-      merged.next.listenedNotes
+      merged.next.listenedNotes,
+      merged.next.notInterestedReason,
+      merged.next.notInterestedOtherText
     );
 
     await syncFavorite(tx, {

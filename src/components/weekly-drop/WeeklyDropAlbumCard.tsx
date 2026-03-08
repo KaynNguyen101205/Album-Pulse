@@ -7,6 +7,7 @@ import type { WeeklyDropFeedbackPatch, WeeklyDropItem } from '@/types/weekly-dro
 import AlreadyListenedToggle from './AlreadyListenedToggle';
 import ErrorBanner from './ErrorBanner';
 import FeedbackActions from './FeedbackActions';
+import NotInterestedInput from './NotInterestedInput';
 import RatingInput from './RatingInput';
 import RecommendationReason from './RecommendationReason';
 import ReviewInput from './ReviewInput';
@@ -40,6 +41,9 @@ export default function WeeklyDropAlbumCard({
 }: WeeklyDropAlbumCardProps) {
   const [reviewDraft, setReviewDraft] = useState(item.feedback.reviewText ?? '');
   const [notesDraft, setNotesDraft] = useState(item.feedback.listenedNotes ?? '');
+  const [notInterestedOtherDraft, setNotInterestedOtherDraft] = useState(
+    item.feedback.notInterestedOtherText ?? ''
+  );
 
   useEffect(() => {
     setReviewDraft(item.feedback.reviewText ?? '');
@@ -48,6 +52,10 @@ export default function WeeklyDropAlbumCard({
   useEffect(() => {
     setNotesDraft(item.feedback.listenedNotes ?? '');
   }, [item.id, item.feedback.listenedNotes]);
+
+  useEffect(() => {
+    setNotInterestedOtherDraft(item.feedback.notInterestedOtherText ?? '');
+  }, [item.id, item.feedback.notInterestedOtherText]);
 
   useEffect(() => {
     const serverValue = normalizeInput(item.feedback.reviewText ?? '');
@@ -81,6 +89,36 @@ export default function WeeklyDropAlbumCard({
     return () => window.clearTimeout(timeoutId);
   }, [notesDraft, item.feedback.alreadyListened, item.feedback.listenedNotes, item.id, item.rank, onPatchFeedback]);
 
+  useEffect(() => {
+    if (item.feedback.notInterestedReason !== 'OTHER') return;
+    const serverValue = normalizeInput(item.feedback.notInterestedOtherText ?? '');
+    const localValue = normalizeInput(notInterestedOtherDraft);
+    if (serverValue === localValue) return;
+
+    const timeoutId = window.setTimeout(() => {
+      onPatchFeedback(
+        item.id,
+        {
+          notInterestedReason: 'OTHER',
+          notInterestedOtherText: localValue,
+        },
+        {
+          eventName: 'weekly_drop_not_interested_submit',
+          metadata: { rank: item.rank, reason: 'OTHER', trigger: 'debounce' },
+        }
+      );
+    }, 700);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    item.feedback.notInterestedReason,
+    item.feedback.notInterestedOtherText,
+    item.id,
+    item.rank,
+    notInterestedOtherDraft,
+    onPatchFeedback,
+  ]);
+
   const activeTags = useMemo(
     () => item.album.tags.filter((tag) => typeof tag === 'string' && tag.trim() !== ''),
     [item.album.tags]
@@ -102,6 +140,24 @@ export default function WeeklyDropAlbumCard({
     const serverValue = normalizeInput(item.feedback.listenedNotes ?? '');
     if (localValue === serverValue) return;
     onPatchFeedback(item.id, { listenedNotes: localValue }, { metadata: { rank: item.rank, trigger: 'blur' } });
+  }
+
+  function handleNotInterestedOtherBlur() {
+    if (item.feedback.notInterestedReason !== 'OTHER') return;
+    const localValue = normalizeInput(notInterestedOtherDraft);
+    const serverValue = normalizeInput(item.feedback.notInterestedOtherText ?? '');
+    if (localValue === serverValue) return;
+    onPatchFeedback(
+      item.id,
+      {
+        notInterestedReason: 'OTHER',
+        notInterestedOtherText: localValue,
+      },
+      {
+        eventName: 'weekly_drop_not_interested_submit',
+        metadata: { rank: item.rank, reason: 'OTHER', trigger: 'blur' },
+      }
+    );
   }
 
   return (
@@ -202,6 +258,32 @@ export default function WeeklyDropAlbumCard({
           }}
           onNotesChange={setNotesDraft}
           onNotesBlur={handleNotesBlur}
+        />
+
+        <NotInterestedInput
+          itemId={item.id}
+          reason={item.feedback.notInterestedReason}
+          otherText={notInterestedOtherDraft}
+          disabled={saveState === 'saving'}
+          onReasonChange={(reason) => {
+            if (reason !== 'OTHER') {
+              setNotInterestedOtherDraft('');
+            }
+            onPatchFeedback(
+              item.id,
+              {
+                notInterestedReason: reason,
+                notInterestedOtherText:
+                  reason === 'OTHER' ? normalizeInput(notInterestedOtherDraft) : null,
+              },
+              {
+                eventName: 'weekly_drop_not_interested_submit',
+                metadata: { rank: item.rank, reason: reason ?? 'NONE', trigger: 'select' },
+              }
+            );
+          }}
+          onOtherTextChange={setNotInterestedOtherDraft}
+          onOtherTextBlur={handleNotInterestedOtherBlur}
         />
 
         <p className={styles.saveStatus}>

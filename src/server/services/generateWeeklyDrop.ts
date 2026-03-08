@@ -52,10 +52,13 @@ export async function generateWeeklyDropForUser(
       };
     }
 
-    const [candidates, context] = await Promise.all([
-      generateCandidatesForUser(userId),
-      getRankingContextForUser(userId),
-    ]);
+    const context = await getRankingContextForUser(userId);
+    const candidates = await generateCandidatesForUser(userId, {
+      suppressedAlbumIds: Object.keys(context.suppressionByAlbum ?? {}),
+      suppressedArtistNames: Object.keys(context.suppressionByArtist ?? {}),
+      suppressedTags: Object.keys(context.suppressionByTag ?? {}),
+      recentArtistCounts: context.recentArtistCounts ?? {},
+    });
 
     if (candidates.length === 0) {
       return {

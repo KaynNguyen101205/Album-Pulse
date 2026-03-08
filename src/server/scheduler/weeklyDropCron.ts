@@ -5,6 +5,8 @@ import {
 } from '@/server/services/generateWeeklyDrop';
 import { getCurrentWeekStartUTC, getWeekKey } from '@/server/scheduler/weekUtils';
 import { getActiveUserIds } from '@/server/scheduler/activeUsers';
+import { recomputeUserPreferenceProfile } from '@/server/services/recomputeUserProfile';
+import { recomputeWeeklyMetricsForWeek } from '@/server/services/weeklyDropMetrics.service';
 
 const LOG_PREFIX = '[weeklyDropCron]';
 
@@ -28,11 +30,20 @@ export async function runWeeklyDropCron(): Promise<{
   console.info(`${LOG_PREFIX} start weekKey=${weekKey}`);
 
   const userIds = await getActiveUserIds();
+  let recomputeFailed = 0;
   let generated = 0;
   let skipped = 0;
   let failed = 0;
 
   for (const userId of userIds) {
+    const recomputeResult = await recomputeUserPreferenceProfile(userId, { weekStart });
+    if (!recomputeResult.ok) {
+      recomputeFailed += 1;
+      console.warn(
+        `${LOG_PREFIX} recompute_failed userId=${userId} weekKey=${weekKey} error=${recomputeResult.error ?? 'unknown'}`
+      );
+    }
+
     logGenerationStart(userId, weekKey);
     const result = await generateWeeklyDropForUser(userId, { weekStart });
     logGenerationEnd(userId, weekKey, result);
@@ -45,8 +56,16 @@ export async function runWeeklyDropCron(): Promise<{
     else skipped += 1;
   }
 
+  const previousWeekStart = new Date(weekStart.getTime());
+  previousWeekStart.setUTCDate(previousWeekStart.getUTCDate() - 7);
+  try {
+    await recomputeWeeklyMetricsForWeek(previousWeekStart, userIds);
+  } catch (error) {
+    console.error(`${LOG_PREFIX} metrics_recompute_failed weekKey=${weekKey}`, error);
+  }
+
   console.info(
-    `${LOG_PREFIX} end weekKey=${weekKey} activeUsers=${userIds.length} generated=${generated} skipped=${skipped} failed=${failed}`
+    `${LOG_PREFIX} end weekKey=${weekKey} activeUsers=${userIds.length} recomputeFailed=${recomputeFailed} generated=${generated} skipped=${skipped} failed=${failed}`
   );
 
   return {
