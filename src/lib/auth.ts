@@ -4,13 +4,17 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { compare } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { env } from '@/lib/env';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+      // Link Google to existing user when email already exists (e.g. credentials signup).
+      // Prevents "Another account already exists with the same e-mail" / error=Callback.
+      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       id: 'credentials',
@@ -55,9 +59,16 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
-      if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
+      // Prefer canonical base URL from env so redirects work on Vercel (no wrong host).
+      const canonicalBase = env.NEXTAUTH_URL.replace(/\/$/, '');
+      const effectiveBase = canonicalBase || baseUrl;
+      if (url.startsWith('/')) return `${effectiveBase}${url}`;
+      try {
+        if (new URL(url).origin === effectiveBase) return url;
+      } catch {
+        // ignore invalid URL
+      }
+      return effectiveBase;
     },
     async jwt({ token, user }) {
       if (user) {
@@ -74,9 +85,22 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn({ user }) {
-      // Optional: log sign-in
       void user;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: env.NEXTAUTH_SECRET,
+  // Surface OAuth callback errors in server logs (e.g. Vercel) instead of only redirecting with error=Callback
+  logger: {
+    error(code, metadata) {
+      console.error('[NextAuth]', code, metadata);
+    },
+    warn(code) {
+      console.warn('[NextAuth]', code);
+    },
+    debug(code, metadata) {
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[NextAuth]', code, metadata);
+      }
+    },
+  },
 };
