@@ -106,6 +106,7 @@ export const weeklyDropFeedbackPatchSchema = z
       .optional(),
     notInterestedOtherText: z.string().max(500).nullable().optional(),
   })
+  .strict()
   .superRefine((value, ctx) => {
     if (
       value.notInterestedOtherText &&
@@ -117,8 +118,7 @@ export const weeklyDropFeedbackPatchSchema = z
         message: 'Other reason text requires notInterestedReason=OTHER.',
       });
     }
-  })
-  .strict();
+  });
 
 export type WeeklyDropFeedbackPatchInput = z.infer<typeof weeklyDropFeedbackPatchSchema>;
 
