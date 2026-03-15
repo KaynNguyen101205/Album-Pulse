@@ -10,10 +10,10 @@ import { env } from '@/lib/env';
 /** Wraps the adapter to log any error (e.g. in Vercel) so we see the real cause of error=Callback. */
 function withAdapterErrorLogging(adapter: Adapter): Adapter {
   const wrap =
-    <A extends unknown[], R>(name: string, fn: ((...args: A) => Promise<R>) | undefined) =>
+    <A extends unknown[], R>(name: string, fn: ((...args: A) => R) | undefined) =>
     (...args: A): Promise<R> => {
       if (!fn) throw new Error(`Adapter.${name} is not implemented`);
-      return fn(...args).catch((e) => {
+      return Promise.resolve(fn(...args)).catch((e: unknown) => {
         console.error('[NextAuth adapter]', name, e);
         throw e;
       });
@@ -23,7 +23,6 @@ function withAdapterErrorLogging(adapter: Adapter): Adapter {
     ...adapter,
     createUser: adapter.createUser ? wrap('createUser', adapter.createUser) : undefined,
     linkAccount: adapter.linkAccount ? wrap('linkAccount', adapter.linkAccount) : undefined,
-    createSession: adapter.createSession ? wrap('createSession', adapter.createSession) : undefined,
   };
 }
 
