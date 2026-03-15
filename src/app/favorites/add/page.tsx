@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 
 import ErrorNotice from '@/components/ErrorNotice';
@@ -162,12 +163,13 @@ export default function AddFavoritesPage() {
               <li key={key} className={styles.resultItem}>
                 <div className={styles.resultInfo}>
                   {c.coverUrl && (
-                    <img
+                    <Image
                       src={c.coverUrl}
                       alt=""
                       className={styles.cover}
                       width={48}
                       height={48}
+                      unoptimized
                     />
                   )}
                   <div>

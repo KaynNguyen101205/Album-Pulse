@@ -304,7 +304,6 @@ export default function DashboardPage() {
               type="button"
               className={styles.refreshButton}
               onClick={retryRecommendations}
-              disabled={loadState === 'loading'}
             >
               Refresh recommendations
             </button>
