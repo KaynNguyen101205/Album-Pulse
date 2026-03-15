@@ -207,8 +207,16 @@ export default function WeeklyDropPage() {
         <section className={styles.emptyWrap}>
           <EmptyState
             title="Next drop not ready yet"
-            message="Your next Weekly Drop is still being prepared. Please check back soon."
+            message="Weekly Drop is built from your favorite albums. Complete onboarding or add more favorites, then we'll generate your first drop (usually within a few minutes)."
           />
+          <nav className={styles.emptyStateLinks} aria-label="Get started">
+            <Link href="/onboarding" className={styles.emptyStateLink}>
+              Complete onboarding
+            </Link>
+            <Link href="/favorites" className={styles.emptyStateLink}>
+              Add favorite albums
+            </Link>
+          </nav>
         </section>
       ) : (
         <WeeklyDropList

@@ -48,8 +48,31 @@
   margin-top: 1rem;
   min-height: 42vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1.25rem;
+}
+
+.emptyStateLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.emptyStateLink {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.emptyStateLink:hover {
+  background: #0d9488;
 }
 
 @media (min-width: 768px) {

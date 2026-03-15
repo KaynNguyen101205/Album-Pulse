@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+import Link from 'next/link';
+
 import AlbumCard from '@/components/AlbumCard';
 import EmptyState from '@/components/EmptyState';
 import ErrorNotice from '@/components/ErrorNotice';
@@ -288,6 +290,14 @@ export default function DashboardPage() {
             title="No recommendations yet"
             message="Complete onboarding or add more favorite albums. Check your Weekly Drop for this week's picks."
           />
+          <nav className={styles.emptyStateLinks} aria-label="Get started">
+            <Link href="/onboarding" className={styles.emptyStateLink}>
+              Complete onboarding
+            </Link>
+            <Link href="/favorites" className={styles.emptyStateLink}>
+              Add favorite albums
+            </Link>
+          </nav>
         </section>
       ) : (
         <section className={styles.grid} aria-live="polite">

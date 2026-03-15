@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 
 import { prisma } from '@/lib/prisma';
 import { getSessionUserId } from '@/lib/session';
+import { getCurrentWeekStartUTC, getWeekKey } from '@/server/scheduler/weekUtils';
 import type {
   NotInterestedReason,
   WeeklyDrop,
@@ -449,7 +450,8 @@ async function fetchDropItems(
 
 export async function getCurrentWeeklyDrop(): Promise<WeeklyDrop | null> {
   const userId = await requireUserId();
-  const weekStart = toDateOnlyString(getLocalIsoWeekStartDate());
+  // Use UTC week start so we match generateWeeklyDropForUser (which uses getCurrentWeekStartUTC).
+  const weekStart = getWeekKey(getCurrentWeekStartUTC());
 
   const drops = await prisma.$queryRawUnsafe<DropRow[]>(
     `
@@ -467,7 +469,7 @@ export async function getCurrentWeeklyDrop(): Promise<WeeklyDrop | null> {
   if (!drop) return null;
 
   const items = (await fetchDropItems(drop.id, userId)).slice(0, 5);
-  if (items.length < 5) return null;
+  if (items.length === 0) return null;
 
   return {
     id: drop.id,
