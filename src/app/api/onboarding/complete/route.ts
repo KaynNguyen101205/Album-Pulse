@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireSession } from '@/lib/session';
 import { generateWeeklyDropForUser } from '@/server/services/generateWeeklyDrop';
+import { saveOnboardingFavorites } from '@/server/services/onboardingFavorites.service';
+import type { OnboardingFavoritesBody } from '@/lib/validation/schemas';
 
 const MINIMUM_ALBUMS = 3;
 
@@ -160,10 +162,35 @@ export async function POST(request: NextRequest) {
   const preferredArtists = normalizeStringArray(body.preferredArtists);
   const preferredGenres = normalizeStringArray(body.preferredGenres);
 
-  const now = new Date();
+  // Persist selected albums so /api/onboarding/status returns isComplete and user is not sent back to onboarding.
+  const favoritesBody: OnboardingFavoritesBody = {
+    selectedAlbums: selectedAlbumsRaw
+      .filter((item) => toNonEmptyString(item.title) && toNonEmptyString(item.artistName))
+      .slice(0, 30)
+      .map((item) => ({
+        source: item.source === 'manual' ? 'manual' : 'search',
+        mbid: toOptionalString(item.mbid) ?? undefined,
+        title: toNonEmptyString(item.title)!,
+        artistName: toNonEmptyString(item.artistName)!,
+        artistMbid: toOptionalString(item.artistMbid) ?? undefined,
+        releaseYear: toOptionalYear(item.releaseYear) ?? undefined,
+        coverUrl: toOptionalString(item.coverUrl) ?? undefined,
+      })),
+    preferredArtists,
+    preferredGenres,
+  };
 
-  // Legacy onboarding persisted to dropped tables (NguoiDung, CaiDatNguoiDung, NgheSi, etc.).
-  // Stubbed so the build passes; selected albums/preferences are not saved. Weekly drop still runs below.
+  try {
+    await saveOnboardingFavorites(nguoiDungId, favoritesBody);
+  } catch (err) {
+    console.error('[onboarding/complete] saveOnboardingFavorites failed', nguoiDungId, err);
+    return NextResponse.json(
+      { error: 'save_failed', message: 'Failed to save your favorites.' },
+      { status: 500 }
+    );
+  }
+
+  const now = new Date();
 
   // First weekly drop for new user: generate for current week (idempotent). Do not block response.
   generateWeeklyDropForUser(nguoiDungId).catch((err) => {
