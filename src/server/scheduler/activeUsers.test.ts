@@ -16,14 +16,14 @@ beforeEach(() => {
 });
 
 describe('getActiveUserIds', () => {
-  it('returns distinct user IDs that have a session with expiresAt >= cutoff', async () => {
+  it('returns distinct user IDs that have a session with expires >= cutoff', async () => {
     // Prisma findMany with distinct: ['userId'] returns one row per userId
     mockFindMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
 
     const ids = await getActiveUserIds();
     expect(ids).toEqual(['user-1', 'user-2']);
     expect(mockFindMany).toHaveBeenCalledWith({
-      where: { expiresAt: { gte: expect.any(Date) } },
+      where: { expires: { gte: expect.any(Date) } },
       select: { userId: true },
       distinct: ['userId'],
     });

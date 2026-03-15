@@ -3,9 +3,13 @@ import { generateWeeklyDropForUser } from './generateWeeklyDrop';
 
 const mockFindUnique = vi.fn();
 const mockTransaction = vi.fn();
+const mockUserFavoriteAlbumCount = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
+    userFavoriteAlbum: {
+      count: (...args: unknown[]) => mockUserFavoriteAlbumCount(...args),
+    },
     weeklyDrop: {
       findUnique: (...args: unknown[]) => mockFindUnique(...args),
     },
@@ -65,6 +69,7 @@ function oneRecommendation(): RankedRecommendation[] {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockUserFavoriteAlbumCount.mockResolvedValue(3);
   vi.mocked(generateCandidatesForUser).mockResolvedValue([
     {
       albumId: 'album-1',

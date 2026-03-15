@@ -41,6 +41,7 @@ type SuggestResponse = {
   dotGoiYId?: string;
   items?: ApiRecommendationItem[];
   hasFavorites?: boolean;
+  fromFavoritesFallback?: boolean;
   error?: string;
   message?: string;
 };
@@ -124,6 +125,7 @@ export default function DashboardPage() {
   const [onboardingGateState, setOnboardingGateState] = useState<OnboardingGateState>('checking');
   const [onboardingGateError, setOnboardingGateError] = useState<string | null>(null);
   const [hasFavoritesFromSuggest, setHasFavoritesFromSuggest] = useState(false);
+  const [fromFavoritesFallback, setFromFavoritesFallback] = useState(false);
 
   const refreshFavorites = useCallback(async () => {
     try {
@@ -213,6 +215,7 @@ export default function DashboardPage() {
         setItems(normalized);
         setDotGoiYId(toStringOrNull(payload?.dotGoiYId));
         setHasFavoritesFromSuggest(payload?.hasFavorites === true);
+        setFromFavoritesFallback(payload?.fromFavoritesFallback === true);
         setLoadState(normalized.length === 0 ? 'empty' : 'success');
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
@@ -326,6 +329,11 @@ export default function DashboardPage() {
         </section>
       ) : (
         <section className={styles.grid} aria-live="polite">
+          {fromFavoritesFallback && (
+            <p className={styles.fallbackNotice}>
+              Showing your favorites. Add more albums or use &quot;Refresh recommendations&quot; for new suggestions.
+            </p>
+          )}
           {sortedItems.map((item) => (
             <AlbumCard
               key={item.id}

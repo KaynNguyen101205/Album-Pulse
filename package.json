@@ -18,7 +18,8 @@
     "list:users": "npx tsx scripts/list-users.ts",
     "seed:test-user": "npx tsx scripts/seed-test-user.ts",
     "seed:more-albums": "npx tsx scripts/seed-more-albums.ts",
-    "cron:weekly-drop": "npx tsx scripts/run-weekly-drop-cron.ts"
+    "cron:weekly-drop": "npx tsx scripts/run-weekly-drop-cron.ts",
+    "test:recommendation": "npx tsx scripts/test-recommendation-flow.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.0",
