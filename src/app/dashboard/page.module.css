@@ -27,6 +27,34 @@
   line-height: 1.5;
 }
 
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.refreshButtonHeader {
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid #0f766e;
+  background: #f0fdfa;
+  color: #0f766e;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.refreshButtonHeader:hover:not(:disabled) {
+  background: #ccfbf1;
+}
+
+.refreshButtonHeader:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .weeklyDropLink {
   width: fit-content;
   margin-top: 0.58rem;
@@ -52,17 +80,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(12.4rem, 1fr));
   gap: 1rem;
-}
-
-.fallbackNotice {
-  grid-column: 1 / -1;
-  margin: 0 0 0.5rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 0.5rem;
-  background: #f0fdfa;
-  border: 1px solid #99f6e4;
-  color: #0f766e;
-  font-size: 0.9rem;
 }
 
 .errorWrap {

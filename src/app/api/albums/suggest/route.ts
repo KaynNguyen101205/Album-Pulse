@@ -44,45 +44,7 @@ export async function GET() {
         });
       }
       const hasFavorites = favoriteCount >= MIN_FAVORITES_FOR_DROP;
-      if (hasFavorites && favoriteCount > 0) {
-        const favorites = await prisma.userFavoriteAlbum.findMany({
-          where: { userId },
-          orderBy: { addedAt: 'desc' },
-          take: 10,
-          include: {
-            album: {
-              include: { artist: true },
-            },
-          },
-        });
-        const items = favorites.map((fav, index) => ({
-          score: 1,
-          diem: 1,
-          viTri: index + 1,
-          lyDo: 'From your favorites',
-          reason: 'From your favorites',
-          album: {
-            id: fav.album.id,
-            spotifyId: fav.album.mbid,
-            name: fav.album.title,
-            ten: fav.album.title,
-            artistName: fav.album.artist.name,
-            anhBiaUrl: fav.album.coverUrl,
-            releaseDate: fav.album.releaseYear != null ? String(fav.album.releaseYear) : null,
-            ngayPhatHanh: fav.album.releaseYear != null ? String(fav.album.releaseYear) : null,
-            spotifyUrl: null,
-          },
-        }));
-        console.info('[api/albums/suggest] returning favorites as fallback', { userId, count: items.length });
-        return NextResponse.json({
-          ok: true,
-          dotGoiYId: null,
-          items,
-          hasFavorites: true,
-          fromFavoritesFallback: true,
-        });
-      }
-      console.info('[api/albums/suggest] returning empty', { userId, favoriteCount, hasFavorites: hasFavorites });
+      console.info('[api/albums/suggest] no drop', { userId, favoriteCount, hasFavorites });
       return NextResponse.json({
         ok: true,
         dotGoiYId: null,

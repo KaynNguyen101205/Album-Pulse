@@ -41,7 +41,6 @@ type SuggestResponse = {
   dotGoiYId?: string;
   items?: ApiRecommendationItem[];
   hasFavorites?: boolean;
-  fromFavoritesFallback?: boolean;
   error?: string;
   message?: string;
 };
@@ -125,7 +124,7 @@ export default function DashboardPage() {
   const [onboardingGateState, setOnboardingGateState] = useState<OnboardingGateState>('checking');
   const [onboardingGateError, setOnboardingGateError] = useState<string | null>(null);
   const [hasFavoritesFromSuggest, setHasFavoritesFromSuggest] = useState(false);
-  const [fromFavoritesFallback, setFromFavoritesFallback] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshFavorites = useCallback(async () => {
     try {
@@ -185,6 +184,26 @@ export default function DashboardPage() {
     setRetryNonce((prev) => prev + 1);
   }, []);
 
+  const refreshRecommendations = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/recommendations/refresh', { method: 'POST', cache: 'no-store' });
+      const data = (await res.json()) as { ok?: boolean; generated?: boolean; error?: string };
+      if (data.ok && data.generated) {
+        retryRecommendations();
+      } else if (data.ok && !data.generated) {
+        retryRecommendations();
+      } else {
+        retryRecommendations();
+      }
+    } catch {
+      retryRecommendations();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, retryRecommendations]);
+
   useEffect(() => {
     if (onboardingGateState !== 'allowed') return;
 
@@ -215,7 +234,6 @@ export default function DashboardPage() {
         setItems(normalized);
         setDotGoiYId(toStringOrNull(payload?.dotGoiYId));
         setHasFavoritesFromSuggest(payload?.hasFavorites === true);
-        setFromFavoritesFallback(payload?.fromFavoritesFallback === true);
         setLoadState(normalized.length === 0 ? 'empty' : 'success');
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
@@ -260,11 +278,21 @@ export default function DashboardPage() {
         <p className={styles.subtitle}>
           Fresh album suggestions based on your favorite albums.
         </p>
-        {loadState !== 'empty' ? (
+        <nav className={styles.headerActions} aria-label="Dashboard actions">
+          {onboardingGateState === 'allowed' && (
+            <button
+              type="button"
+              className={styles.refreshButtonHeader}
+              onClick={refreshRecommendations}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? 'Refreshing…' : 'Refresh recommendations'}
+            </button>
+          )}
           <a className={styles.weeklyDropLink} href="/weekly-drop">
             View Weekly Drop
           </a>
-        ) : null}
+        </nav>
         {dotGoiYId ? <p className={styles.runId}>Run: {dotGoiYId}</p> : null}
       </header>
 
@@ -306,9 +334,10 @@ export default function DashboardPage() {
             <button
               type="button"
               className={styles.refreshButton}
-              onClick={retryRecommendations}
+              onClick={refreshRecommendations}
+              disabled={isRefreshing}
             >
-              Refresh recommendations
+              {isRefreshing ? 'Refreshing…' : 'Refresh recommendations'}
             </button>
           )}
           <nav className={styles.emptyStateLinks} aria-label="Get started">
@@ -329,11 +358,6 @@ export default function DashboardPage() {
         </section>
       ) : (
         <section className={styles.grid} aria-live="polite">
-          {fromFavoritesFallback && (
-            <p className={styles.fallbackNotice}>
-              Showing your favorites. Add more albums or use &quot;Refresh recommendations&quot; for new suggestions.
-            </p>
-          )}
           {sortedItems.map((item) => (
             <AlbumCard
               key={item.id}

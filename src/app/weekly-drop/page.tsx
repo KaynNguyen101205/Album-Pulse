@@ -51,6 +51,7 @@ export default function WeeklyDropPage() {
   }, []);
 
   const [hasFavoritesFromApi, setHasFavoritesFromApi] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const loadCurrentDrop = useCallback(async () => {
     setLoadState('loading');
@@ -81,6 +82,17 @@ export default function WeeklyDropPage() {
       setLoadState('error');
     }
   }, []);
+
+  const generateDrop = useCallback(async () => {
+    if (isGenerating) return;
+    setIsGenerating(true);
+    try {
+      await fetch('/api/recommendations/refresh', { method: 'POST', cache: 'no-store' });
+      await loadCurrentDrop();
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [isGenerating, loadCurrentDrop]);
 
   useEffect(() => {
     void loadCurrentDrop();
@@ -212,10 +224,20 @@ export default function WeeklyDropPage() {
             title="Next drop not ready yet"
             message={
               hasFavoritesFromApi
-                ? "We have your favorite albums. Your first drop may still be generating, or add more favorites to improve picks. Try refreshing in a moment."
-                : "Weekly Drop is built from your favorite albums. Complete onboarding or add more favorites, then we'll generate your first drop."
+                ? "Generate your weekly hidden-gem picks from your favorite albums. If generation failed (e.g. no similar albums in catalog), add more favorites or try again."
+                : "Weekly Drop is built from your favorite albums. Complete onboarding or add more favorites, then generate your first drop."
             }
           />
+          {hasFavoritesFromApi && (
+            <button
+              type="button"
+              className={styles.generateButton}
+              onClick={generateDrop}
+              disabled={isGenerating}
+            >
+              {isGenerating ? 'Generating…' : 'Generate my drop'}
+            </button>
+          )}
           <nav className={styles.emptyStateLinks} aria-label="Get started">
             {!hasFavoritesFromApi && (
               <Link href="/onboarding" className={styles.emptyStateLink}>

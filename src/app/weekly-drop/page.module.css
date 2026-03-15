@@ -54,6 +54,26 @@
   gap: 1.25rem;
 }
 
+.generateButton {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #0f766e;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.generateButton:hover:not(:disabled) {
+  background: #0d9488;
+}
+
+.generateButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .emptyStateLinks {
   display: flex;
   flex-wrap: wrap;
