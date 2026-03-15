@@ -1,20 +1,39 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireSession } from '@/lib/session';
 import {
   getCurrentWeeklyDrop,
   NotLoggedInError,
 } from '@/server/services/weekly-drop.service';
+import { generateWeeklyDropForUser } from '@/server/services/generateWeeklyDrop';
 import { unauthorized, internalError } from '@/lib/api/errors';
+
+const MIN_FAVORITES_FOR_DROP = 3;
 
 /**
  * GET /api/albums/suggest
  * Returns album-based suggestions for the dashboard (no Spotify).
- * Uses the current week's Weekly Drop when available; otherwise returns empty.
- * timeRange query param is accepted for backward compatibility but ignored.
+ * Uses the current week's Weekly Drop when available.
+ * If no drop exists but the user has 3+ favorites, triggers generation once and retries.
  */
 export async function GET() {
   try {
-    const drop = await getCurrentWeeklyDrop();
+    const auth = await requireSession();
+    if (auth instanceof NextResponse) return auth;
+    const userId = auth;
+
+    let drop = await getCurrentWeeklyDrop();
+    if (!drop || drop.items.length === 0) {
+      const favoriteCount = await prisma.userFavoriteAlbum.count({
+        where: { userId },
+      });
+      if (favoriteCount >= MIN_FAVORITES_FOR_DROP) {
+        const result = await generateWeeklyDropForUser(userId);
+        if (result.ok && result.generated) {
+          drop = await getCurrentWeeklyDrop();
+        }
+      }
+    }
     if (!drop || drop.items.length === 0) {
       return NextResponse.json({
         ok: true,
