@@ -1,19 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import styles from '../page.module.css';
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const callbackError = searchParams.get('error');
+  useEffect(() => {
+    if (callbackError === 'Callback') {
+      setError(
+        'Google sign-in failed. Ensure NEXTAUTH_URL is set to https://album-pulse.vercel.app in Vercel and that the Google redirect URI matches. Check Vercel Function logs for the real error.'
+      );
+    }
+  }, [callbackError]);
+
   async function handleCredentialsSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    setError(null); // clear so callback error doesn't persist
     setLoading(true);
     try {
       const res = await signIn('credentials', {
