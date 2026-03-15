@@ -101,9 +101,14 @@ export default function AddFavoritesPage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Link href="/favorites" className={styles.backLink}>
-          ← Back to Favorites
-        </Link>
+        <nav className={styles.backLinks}>
+          <Link href="/dashboard" className={styles.backLink}>
+            ← Dashboard
+          </Link>
+          <Link href="/favorites" className={styles.backLink}>
+            Favorites
+          </Link>
+        </nav>
         <h1 className={styles.title}>Add favorite albums</h1>
         <p className={styles.subtitle}>
           Search for albums and add them to your favorites. Use at least 2 characters.

@@ -134,10 +134,15 @@ export default function FavoritesPage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
+        <nav className={styles.navLinks} aria-label="Navigation">
+          <Link href="/dashboard" className={styles.navLink}>
+            ← Dashboard
+          </Link>
+          <Link href="/favorites/add" className={styles.addLink}>
+            Add favorite albums
+          </Link>
+        </nav>
         <h1 className={styles.title}>Favorites</h1>
-        <Link href="/favorites/add" className={styles.addLink}>
-          Add favorite albums
-        </Link>
       </header>
 
       {onboardingGateState === 'checking' ? (

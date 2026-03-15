@@ -299,6 +299,16 @@ export default function DashboardPage() {
                 : 'Complete onboarding or add favorite albums to get recommendations. Check your Weekly Drop for this week\'s picks.'
             }
           />
+          {hasFavoritesFromSuggest && (
+            <button
+              type="button"
+              className={styles.refreshButton}
+              onClick={retryRecommendations}
+              disabled={loadState === 'loading'}
+            >
+              Refresh recommendations
+            </button>
+          )}
           <nav className={styles.emptyStateLinks} aria-label="Get started">
             {!hasFavoritesFromSuggest && (
               <Link href="/onboarding" className={styles.emptyStateLink}>

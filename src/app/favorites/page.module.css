@@ -12,6 +12,25 @@
   margin-bottom: 1rem;
 }
 
+.navLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.navLink {
+  color: #2563eb;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  text-decoration: underline;
+}
+
 .title {
   margin: 0;
   font-size: 1.95rem;
@@ -20,8 +39,6 @@
 }
 
 .addLink {
-  display: inline-block;
-  margin-top: 0.5rem;
   color: #2563eb;
   font-size: 0.95rem;
   font-weight: 600;
