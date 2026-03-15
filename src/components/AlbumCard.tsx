@@ -157,7 +157,7 @@ export default function AlbumCard({
           <div className={styles.actions}>
             {spotifyUrl ? (
               <a className={styles.link} href={spotifyUrl} target="_blank" rel="noreferrer">
-                Open in Spotify
+                Open
               </a>
             ) : (
               <span />

@@ -100,11 +100,11 @@ function normalizeItems(items: ApiRecommendationItem[] | undefined): DashboardIt
 }
 
 function buildErrorMessage(status: number, payload: SuggestResponse | null): string {
-  if (status === 401) return 'Your session expired. Please sign in with Spotify again.';
+  if (status === 401) return 'Your session expired. Please sign in again.';
   if (status === 400 && payload?.error === 'invalid_time_range') {
     return payload.message ?? 'Invalid time range filter.';
   }
-  if (status === 429) return 'Spotify rate limit reached. Please wait and try again.';
+  if (status === 429) return 'Too many requests. Please wait and try again.';
   return payload?.message ?? 'Could not load recommendations. Please try again.';
 }
 
@@ -250,10 +250,10 @@ export default function DashboardPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Your Dashboard</h1>
         <p className={styles.subtitle}>
-          Fresh album suggestions based on your Spotify listening history.
+          Fresh album suggestions based on your favorite albums.
         </p>
         <a className={styles.weeklyDropLink} href="/weekly-drop">
-          Open Weekly Drop
+          View Weekly Drop
         </a>
         {dotGoiYId ? <p className={styles.runId}>Run: {dotGoiYId}</p> : null}
       </header>
@@ -279,12 +279,15 @@ export default function DashboardPage() {
       ) : loadState === 'error' ? (
         <ErrorNotice
           className={styles.errorWrap}
-          message={errorMessage ?? 'Failed to load recent plays.'}
+          message={errorMessage ?? 'Failed to load recommendations.'}
           onRetry={retryRecommendations}
         />
       ) : loadState === 'empty' ? (
         <section className={styles.emptyStateWrap}>
-          <EmptyState title="No recent plays found" message="No recent plays found" />
+          <EmptyState
+            title="No recommendations yet"
+            message="Complete onboarding or add more favorite albums. Check your Weekly Drop for this week's picks."
+          />
         </section>
       ) : (
         <section className={styles.grid} aria-live="polite">

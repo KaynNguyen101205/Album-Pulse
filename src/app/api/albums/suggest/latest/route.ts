@@ -1,22 +1,17 @@
 import { NextResponse } from 'next/server';
+import { requireSession } from '@/lib/session';
 
-import { getLatestRecommendationRun } from '@/server/services/recommend.service';
-import { NotLoggedInError } from '@/server/services/spotify.service';
-
+/**
+ * GET /api/albums/suggest/latest
+ * Legacy endpoint; no longer uses Spotify. Returns empty run.
+ */
 export async function GET() {
-  try {
-    const latest = await getLatestRecommendationRun();
+  const auth = await requireSession();
+  if (auth instanceof NextResponse) return auth;
 
-    return NextResponse.json({
-      ok: true,
-      run: latest?.run ?? null,
-      items: latest?.items ?? [],
-    });
-  } catch (err) {
-    if (err instanceof NotLoggedInError) {
-      return NextResponse.json({ error: 'not_logged_in' }, { status: 401 });
-    }
-
-    return NextResponse.json({ error: 'unexpected', message: String(err) }, { status: 500 });
-  }
+  return NextResponse.json({
+    ok: true,
+    run: null,
+    items: [],
+  });
 }

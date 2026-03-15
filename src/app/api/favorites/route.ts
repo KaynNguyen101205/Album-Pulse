@@ -2,8 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { requireSession } from '@/lib/session';
-import { getValidAccessToken, fetchAlbumById, pickBestAlbumImageUrl, NotLoggedInError } from '@/server/services/spotify.service';
-import { SpotifyApiError } from '@/lib/spotify/types';
+
+/**
+ * Resolve request album identifier to DB mbid.
+ * Accepts mbid as-is (mb:xxx, manual:xxx) or legacy Spotify id (prefix with spotify:).
+ */
+function toAlbumMbid(albumSpotifyId: string): string {
+  const trimmed = albumSpotifyId.trim();
+  if (trimmed.startsWith('mb:') || trimmed.startsWith('manual:')) {
+    return trimmed;
+  }
+  return `spotify:${trimmed}`;
+}
 
 export async function GET() {
   const auth = await requireSession();
@@ -21,7 +31,9 @@ export async function GET() {
   });
 
   const items = favorites.map((f) => ({
-    spotifyId: f.album.mbid.startsWith('spotify:') ? f.album.mbid.slice('spotify:'.length) : f.album.mbid,
+    spotifyId: f.album.mbid.startsWith('spotify:')
+      ? f.album.mbid.slice('spotify:'.length)
+      : f.album.mbid,
     ten: f.album.title,
     anhBiaUrl: f.album.coverUrl,
   }));
@@ -41,64 +53,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const albumSpotifyId = typeof body?.albumSpotifyId === 'string' ? body.albumSpotifyId.trim() : '';
-  if (!albumSpotifyId) {
+  const rawId = typeof body?.albumSpotifyId === 'string' ? body.albumSpotifyId.trim() : '';
+  if (!rawId) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const albumMbid = `spotify:${albumSpotifyId}`;
-  let album = await prisma.album.findUnique({
+  const albumMbid = toAlbumMbid(rawId);
+  const album = await prisma.album.findUnique({
     where: { mbid: albumMbid },
   });
 
   if (!album) {
-    try {
-      const accessToken = await getValidAccessToken();
-      const spAlbum = await fetchAlbumById(accessToken, albumSpotifyId);
-
-      const coverUrl = pickBestAlbumImageUrl(spAlbum.images) ?? null;
-      const releaseYearRaw = Number.parseInt((spAlbum.release_date ?? '').slice(0, 4), 10);
-      const releaseYear = Number.isFinite(releaseYearRaw) ? releaseYearRaw : null;
-      const primaryArtist = spAlbum.artists?.[0];
-      const artistId = `spotify:${primaryArtist?.id ?? 'unknown-artist'}`;
-      const artist = await prisma.artist.upsert({
-        where: { id: artistId },
-        create: {
-          id: artistId,
-          mbid: primaryArtist?.id ? `spotify:${primaryArtist.id}` : null,
-          name: primaryArtist?.name ?? 'Unknown artist',
-        },
-        update: {
-          name: primaryArtist?.name ?? 'Unknown artist',
-          ...(primaryArtist?.id ? { mbid: `spotify:${primaryArtist.id}` } : {}),
-        },
-      });
-
-      album = await prisma.album.create({
-        data: {
-          id: randomUUID(),
-          mbid: albumMbid,
-          title: spAlbum.name,
-          artistId: artist.id,
-          releaseYear,
-          coverUrl,
-          source: 'MANUAL',
-        },
-      });
-    } catch (err) {
-      if (err instanceof NotLoggedInError) {
-        return NextResponse.json({ error: 'not_logged_in' }, { status: 401 });
-      }
-      if (err instanceof SpotifyApiError) {
-        if (err.code === 'rate_limited') {
-          return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
-        }
-        if (err.code === 'unauthorized') {
-          return NextResponse.json({ error: 'not_logged_in' }, { status: 401 });
-        }
-      }
-      return NextResponse.json({ error: 'internal_error' }, { status: 500 });
-    }
+    return NextResponse.json(
+      {
+        error: 'album_not_found',
+        message: 'Album not in catalog. Add albums via onboarding or search.',
+      },
+      { status: 400 }
+    );
   }
 
   try {
@@ -123,19 +95,21 @@ export async function DELETE(request: NextRequest) {
   const nguoiDungId = auth;
 
   const { searchParams } = new URL(request.url);
-  const albumSpotifyId = searchParams.get('albumSpotifyId')?.trim() ?? '';
-  if (!albumSpotifyId) {
+  const rawId = searchParams.get('albumSpotifyId')?.trim() ?? '';
+  if (!rawId) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const albumMbid = `spotify:${albumSpotifyId}`;
+  const albumMbid = toAlbumMbid(rawId);
   const album = await prisma.album.findUnique({
     where: { mbid: albumMbid },
   });
 
   if (album) {
     try {
-      await prisma.userFavoriteAlbum.deleteMany({ where: { userId: nguoiDungId, albumId: album.id } });
+      await prisma.userFavoriteAlbum.deleteMany({
+        where: { userId: nguoiDungId, albumId: album.id },
+      });
     } catch (e: unknown) {
       const isNotFound =
         e &&
