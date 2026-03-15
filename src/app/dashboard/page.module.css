@@ -89,6 +89,21 @@
   background: #0d9488;
 }
 
+.emptyStateSecondary {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.weeklyDropLinkSecondary {
+  color: #153b63;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.weeklyDropLinkSecondary:hover {
+  text-decoration: underline;
+}
+
 @media (min-width: 768px) {
   .page {
     padding: 1.7rem 2rem;

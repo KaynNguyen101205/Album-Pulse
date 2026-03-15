@@ -254,9 +254,11 @@ export default function DashboardPage() {
         <p className={styles.subtitle}>
           Fresh album suggestions based on your favorite albums.
         </p>
-        <a className={styles.weeklyDropLink} href="/weekly-drop">
-          View Weekly Drop
-        </a>
+        {loadState !== 'empty' ? (
+          <a className={styles.weeklyDropLink} href="/weekly-drop">
+            View Weekly Drop
+          </a>
+        ) : null}
         {dotGoiYId ? <p className={styles.runId}>Run: {dotGoiYId}</p> : null}
       </header>
 
@@ -298,6 +300,11 @@ export default function DashboardPage() {
               Add favorite albums
             </Link>
           </nav>
+          <p className={styles.emptyStateSecondary}>
+            <a className={styles.weeklyDropLinkSecondary} href="/weekly-drop">
+              View Weekly Drop
+            </a>
+          </p>
         </section>
       ) : (
         <section className={styles.grid} aria-live="polite">
