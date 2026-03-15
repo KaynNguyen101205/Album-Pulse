@@ -40,6 +40,7 @@ type SuggestResponse = {
   ok?: boolean;
   dotGoiYId?: string;
   items?: ApiRecommendationItem[];
+  hasFavorites?: boolean;
   error?: string;
   message?: string;
 };
@@ -122,6 +123,7 @@ export default function DashboardPage() {
   const [favoriteSpotifyIds, setFavoriteSpotifyIds] = useState<Set<string>>(new Set());
   const [onboardingGateState, setOnboardingGateState] = useState<OnboardingGateState>('checking');
   const [onboardingGateError, setOnboardingGateError] = useState<string | null>(null);
+  const [hasFavoritesFromSuggest, setHasFavoritesFromSuggest] = useState(false);
 
   const refreshFavorites = useCallback(async () => {
     try {
@@ -210,6 +212,7 @@ export default function DashboardPage() {
         const normalized = normalizeItems(payload?.items);
         setItems(normalized);
         setDotGoiYId(toStringOrNull(payload?.dotGoiYId));
+        setHasFavoritesFromSuggest(payload?.hasFavorites === true);
         setLoadState(normalized.length === 0 ? 'empty' : 'success');
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
@@ -289,15 +292,21 @@ export default function DashboardPage() {
       ) : loadState === 'empty' ? (
         <section className={styles.emptyStateWrap}>
           <EmptyState
-            title="No recommendations yet"
-            message="Complete onboarding or add more favorite albums. Check your Weekly Drop for this week's picks."
+            title={hasFavoritesFromSuggest ? 'No recommendations yet' : 'No recommendations yet'}
+            message={
+              hasFavoritesFromSuggest
+                ? "We have your favorite albums. Recommendations may still be generating, or add more favorites to improve suggestions. Check your Weekly Drop for this week's picks."
+                : 'Complete onboarding or add favorite albums to get recommendations. Check your Weekly Drop for this week\'s picks.'
+            }
           />
           <nav className={styles.emptyStateLinks} aria-label="Get started">
-            <Link href="/onboarding" className={styles.emptyStateLink}>
-              Complete onboarding
-            </Link>
+            {!hasFavoritesFromSuggest && (
+              <Link href="/onboarding" className={styles.emptyStateLink}>
+                Complete onboarding
+              </Link>
+            )}
             <Link href="/favorites" className={styles.emptyStateLink}>
-              Add favorite albums
+              {hasFavoritesFromSuggest ? 'Add more favorite albums' : 'Add favorite albums'}
             </Link>
           </nav>
           <p className={styles.emptyStateSecondary}>

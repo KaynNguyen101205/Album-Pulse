@@ -23,8 +23,9 @@ export async function GET() {
     const userId = auth;
 
     let drop = await getCurrentWeeklyDrop();
+    let favoriteCount: number | null = null;
     if (!drop || drop.items.length === 0) {
-      const favoriteCount = await prisma.userFavoriteAlbum.count({
+      favoriteCount = await prisma.userFavoriteAlbum.count({
         where: { userId },
       });
       if (favoriteCount >= MIN_FAVORITES_FOR_DROP) {
@@ -35,10 +36,16 @@ export async function GET() {
       }
     }
     if (!drop || drop.items.length === 0) {
+      if (favoriteCount === null) {
+        favoriteCount = await prisma.userFavoriteAlbum.count({
+          where: { userId },
+        });
+      }
       return NextResponse.json({
         ok: true,
         dotGoiYId: null,
         items: [],
+        hasFavorites: favoriteCount >= MIN_FAVORITES_FOR_DROP,
       });
     }
 
