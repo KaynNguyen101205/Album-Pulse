@@ -1,24 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import styles from '../page.module.css';
 
-export default function LoginPage() {
-  const searchParams = useSearchParams();
+const CALLBACK_ERROR_MESSAGE =
+  'Google sign-in failed. Ensure NEXTAUTH_URL is set to https://album-pulse.vercel.app in Vercel and that the Google redirect URI matches. Check Vercel Function logs for the real error.';
+
+function LoginForm({ callbackError }: { callbackError: string | null }) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const callbackError = searchParams.get('error');
   useEffect(() => {
     if (callbackError === 'Callback') {
-      setError(
-        'Google sign-in failed. Ensure NEXTAUTH_URL is set to https://album-pulse.vercel.app in Vercel and that the Google redirect URI matches. Check Vercel Function logs for the real error.'
-      );
+      setError(CALLBACK_ERROR_MESSAGE);
     }
   }, [callbackError]);
 
@@ -127,5 +126,19 @@ export default function LoginPage() {
         </p>
       </section>
     </main>
+  );
+}
+
+function LoginFormWithParams() {
+  const searchParams = useSearchParams();
+  const callbackError = searchParams.get('error');
+  return <LoginForm callbackError={callbackError} />;
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginForm callbackError={null} />}>
+      <LoginFormWithParams />
+    </Suspense>
   );
 }
