@@ -1,0 +1,164 @@
+.page {
+  min-height: 100vh;
+  padding: 1.2rem;
+  font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 88% -8%, rgba(34, 197, 94, 0.15), transparent 40%),
+    radial-gradient(circle at -5% 105%, rgba(56, 189, 248, 0.2), transparent 35%),
+    linear-gradient(160deg, #f6fafc 0%, #edf4ff 55%, #f6fbf8 100%);
+}
+
+.header {
+  margin-bottom: 1.25rem;
+}
+
+.backLink {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  color: #2563eb;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.title {
+  margin: 0 0 0.25rem;
+  font-size: 1.95rem;
+  color: #0b1323;
+  letter-spacing: 0.01em;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.searchWrap {
+  margin-bottom: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.label {
+  color: #334155;
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.input {
+  border: 1px solid #d2dce8;
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.78rem;
+  color: #0f172a;
+  font-size: 0.94rem;
+  background: #ffffff;
+}
+
+.input:focus-visible {
+  outline: 2px solid #8fd0ff;
+  outline-offset: 2px;
+}
+
+.stateText {
+  margin: 0;
+  padding: 0.75rem 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.errorWrap {
+  margin-bottom: 0.75rem;
+}
+
+.results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.resultItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #dce5ef;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.resultInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.cover {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+.resultTitle {
+  display: block;
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.resultArtist {
+  display: block;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.resultYear {
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.addButton {
+  flex-shrink: 0;
+  border: 1px solid #22c55e;
+  border-radius: 0.65rem;
+  background: #f0fdf4;
+  color: #15803d;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addButton:hover:not(:disabled) {
+  background: #dcfce7;
+}
+
+.addButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.addButton:focus-visible {
+  outline: 2px solid #86efac;
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding: 1.7rem 2rem;
+  }
+
+  .title {
+    font-size: 2.1rem;
+  }
+}

@@ -19,6 +19,35 @@
   letter-spacing: 0.01em;
 }
 
+.addLink {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: #2563eb;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.addLink:hover {
+  text-decoration: underline;
+}
+
+.emptyText {
+  margin: 0 0 0.5rem;
+}
+
+.addLinkEmpty {
+  display: inline-block;
+  color: #2563eb;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.addLinkEmpty:hover {
+  text-decoration: underline;
+}
+
 .stateBox,
 .errorBox {
   border-radius: 0.85rem;

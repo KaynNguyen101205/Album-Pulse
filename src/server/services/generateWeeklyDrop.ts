@@ -37,6 +37,9 @@ export async function generateWeeklyDropForUser(
   const frozenUntil = getFrozenUntil(weekStart);
 
   try {
+    const favoriteCount = await prisma.userFavoriteAlbum.count({ where: { userId } });
+    console.info(`${LOG_PREFIX} start userId=${userId} weekKey=${weekKey} favoriteCount=${favoriteCount}`);
+
     const existing = await prisma.weeklyDrop.findUnique({
       where: { userId_weekStart: { userId, weekStart } },
       select: { id: true, status: true },
@@ -61,6 +64,7 @@ export async function generateWeeklyDropForUser(
     });
 
     if (candidates.length === 0) {
+      console.warn(`${LOG_PREFIX} no_candidates userId=${userId} weekKey=${weekKey}`);
       return {
         ok: false,
         error: 'no_candidates',

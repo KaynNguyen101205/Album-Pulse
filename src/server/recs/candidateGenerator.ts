@@ -28,6 +28,8 @@ const TARGET_MIN = 100;
 const TARGET_MAX = 500;
 const MAX_ALBUMS_PER_ARTIST = 5;
 const RECENTLY_RECOMMENDED_WEEKS = 8;
+const CATALOG_FALLBACK_PER_ARTIST = 15;
+const CATALOG_FALLBACK_MAX_TOTAL = 150;
 
 function normalizeForDedupe(s: string): string {
   return s
@@ -148,6 +150,87 @@ async function getExcludedAlbumIds(userId: string): Promise<Set<string>> {
   recentlyRecommended.forEach((r) => excluded.add(r.albumId));
 
   return excluded;
+}
+
+/**
+ * Fallback when vector/artist/tag sources return no candidates: get other albums
+ * by the same artist(s) as the user's favorites from our catalog (DB only).
+ * Ensures we can still generate a weekly drop when embeddings/Last.fm are missing or empty.
+ */
+async function getCatalogFallbackCandidates(
+  userId: string,
+  favoriteAlbumIds: string[],
+  excludedIds: Set<string>,
+  suppressedAlbumIds: Set<string>,
+  suppressedArtistNames: Set<string>,
+  recentArtistCounts: Record<string, number>,
+  artistRepeatCapInWindow: number
+): Promise<CandidateAlbum[]> {
+  if (favoriteAlbumIds.length === 0) return [];
+
+  const artistRows = await prisma.$queryRawUnsafe<
+    Array<{ artistId: string; artistName: string }>
+  >(
+    `SELECT DISTINCT a."artistId" AS "artistId", ar."name" AS "artistName"
+     FROM "UserFavoriteAlbum" ufa
+     JOIN "Album" a ON a."id" = ufa."albumId"
+     JOIN "Artist" ar ON ar."id" = a."artistId"
+     WHERE ufa."userId" = $1 AND ufa."albumId" IN (${favoriteAlbumIds.map((_, i) => `$${i + 2}`).join(',')})`,
+    userId,
+    ...favoriteAlbumIds
+  );
+
+  const candidates: CandidateAlbum[] = [];
+  const seenAlbumId = new Set<string>();
+
+  for (const { artistId, artistName } of artistRows) {
+    if (isArtistOverRepeatCap(artistName, recentArtistCounts, artistRepeatCapInWindow)) continue;
+    if (suppressedArtistNames.has(normalizeToken(artistName))) continue;
+
+    const placeholders = favoriteAlbumIds.map((_, i) => `$${i + 2}`).join(',');
+    const rows = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        mbid: string;
+        title: string;
+        releaseYear: number | null;
+        coverUrl: string | null;
+        popularityScore: number | null;
+        tagNames: string[] | null;
+      }>
+    >(
+      `SELECT a."id", a."mbid", a."title", a."releaseYear", a."coverUrl", a."popularityScore",
+              (SELECT array_agg(t."name") FROM "AlbumTag" at2
+               JOIN "Tag" t ON t."id" = at2."tagId" WHERE at2."albumId" = a."id") AS "tagNames"
+       FROM "Album" a
+       WHERE a."artistId" = $1
+         AND a."id" NOT IN (${placeholders})
+       ORDER BY a."releaseYear" DESC NULLS LAST, a."title" ASC
+       LIMIT ${CATALOG_FALLBACK_PER_ARTIST}`,
+      artistId,
+      ...favoriteAlbumIds
+    );
+
+    for (const row of rows) {
+      if (excludedIds.has(row.id) || suppressedAlbumIds.has(normalizeToken(row.id)) || seenAlbumId.has(row.id)) continue;
+      if (!row.title?.trim() || !artistName?.trim()) continue;
+      seenAlbumId.add(row.id);
+      candidates.push({
+        albumId: row.id,
+        mbid: row.mbid,
+        title: row.title,
+        artistName,
+        releaseYear: row.releaseYear,
+        tags: Array.isArray(row.tagNames) ? row.tagNames : [],
+        coverUrl: row.coverUrl,
+        popularityScore: row.popularityScore,
+        hasEmbedding: false,
+        sources: ['artist'],
+      });
+    }
+  }
+
+  return candidates.slice(0, CATALOG_FALLBACK_MAX_TOTAL);
 }
 
 /**
@@ -305,6 +388,25 @@ export async function generateCandidatesForUser(
       byDedupeKey.set(key, mergeCandidates(existing, c));
     } else {
       byDedupeKey.set(key, toCandidateAlbum(c));
+    }
+  }
+
+  if (byDedupeKey.size === 0) {
+    const fallbackCands = await getCatalogFallbackCandidates(
+      userId,
+      favoriteAlbumIds,
+      excludedIds,
+      suppressedAlbumIds,
+      suppressedArtistNames,
+      recentArtistCounts,
+      artistRepeatCapInWindow
+    );
+    for (const c of fallbackCands) {
+      const key = getDedupeKey(c.mbid, c.title, c.artistName, c.releaseYear);
+      if (!byDedupeKey.has(key)) byDedupeKey.set(key, c);
+    }
+    if (fallbackCands.length > 0 && process.env.NODE_ENV !== 'test') {
+      console.info('[generateCandidates] catalog fallback used', { userId, count: fallbackCands.length });
     }
   }
 

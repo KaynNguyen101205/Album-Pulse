@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+import Link from 'next/link';
 import ErrorNotice from '@/components/ErrorNotice';
 import { fetchFavorites, removeFavorite } from '@/lib/favorites/client';
 import styles from './page.module.css';
@@ -134,6 +135,9 @@ export default function FavoritesPage() {
     <main className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>Favorites</h1>
+        <Link href="/favorites/add" className={styles.addLink}>
+          Add favorite albums
+        </Link>
       </header>
 
       {onboardingGateState === 'checking' ? (
@@ -157,7 +161,12 @@ export default function FavoritesPage() {
           onRetry={loadFavorites}
         />
       ) : loadState === 'empty' ? (
-        <section className={styles.stateBox}>No favorites yet</section>
+        <section className={styles.stateBox}>
+          <p className={styles.emptyText}>No favorites yet</p>
+          <Link href="/favorites/add" className={styles.addLinkEmpty}>
+            Add favorite albums
+          </Link>
+        </section>
       ) : (
         <section className={styles.list} aria-live="polite">
           {items.map((item) => (

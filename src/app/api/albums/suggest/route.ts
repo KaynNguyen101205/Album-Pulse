@@ -28,8 +28,10 @@ export async function GET() {
       favoriteCount = await prisma.userFavoriteAlbum.count({
         where: { userId },
       });
+      console.info('[api/albums/suggest] no drop', { userId, favoriteCount });
       if (favoriteCount >= MIN_FAVORITES_FOR_DROP) {
         const result = await generateWeeklyDropForUser(userId);
+        console.info('[api/albums/suggest] generation result', { userId, ok: result.ok, generated: result.ok && 'generated' in result ? result.generated : null, error: result.ok === false ? result.error : null });
         if (result.ok && result.generated) {
           drop = await getCurrentWeeklyDrop();
         }
@@ -41,6 +43,7 @@ export async function GET() {
           where: { userId },
         });
       }
+      console.info('[api/albums/suggest] returning empty', { userId, favoriteCount, hasFavorites: favoriteCount >= MIN_FAVORITES_FOR_DROP });
       return NextResponse.json({
         ok: true,
         dotGoiYId: null,

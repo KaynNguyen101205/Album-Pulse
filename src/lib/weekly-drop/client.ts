@@ -7,6 +7,7 @@ import type {
 
 type CurrentDropResponse = {
   drop?: WeeklyDrop | null;
+  hasFavorites?: boolean;
   error?: string;
   message?: string;
 };
@@ -33,9 +34,14 @@ function buildError(status: number, payload?: { error?: string; message?: string
   return new Error(payload?.message ?? payload?.error ?? 'Request failed.');
 }
 
+export type CurrentWeeklyDropResult = {
+  drop: WeeklyDrop | null;
+  hasFavorites: boolean;
+};
+
 export async function fetchCurrentWeeklyDrop(
   signal?: AbortSignal
-): Promise<WeeklyDrop | null> {
+): Promise<CurrentWeeklyDropResult> {
   const response = await fetch('/api/weekly-drop/current', {
     method: 'GET',
     cache: 'no-store',
@@ -47,7 +53,10 @@ export async function fetchCurrentWeeklyDrop(
     throw buildError(response.status, payload);
   }
 
-  return payload.drop ?? null;
+  return {
+    drop: payload.drop ?? null,
+    hasFavorites: payload.hasFavorites === true,
+  };
 }
 
 export async function patchWeeklyDropFeedback(

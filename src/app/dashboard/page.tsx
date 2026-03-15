@@ -305,7 +305,7 @@ export default function DashboardPage() {
                 Complete onboarding
               </Link>
             )}
-            <Link href="/favorites" className={styles.emptyStateLink}>
+            <Link href="/favorites/add" className={styles.emptyStateLink}>
               {hasFavoritesFromSuggest ? 'Add more favorite albums' : 'Add favorite albums'}
             </Link>
           </nav>

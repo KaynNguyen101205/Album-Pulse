@@ -135,3 +135,84 @@ export async function saveOnboardingFavorites(
     preferredGenresCount: body.preferredGenres?.length ?? 0,
   };
 }
+
+export type AddSingleAlbumInput = {
+  mbid?: string | null;
+  title: string;
+  artistName: string;
+  artistMbid?: string | null;
+  releaseYear?: number | null;
+  coverUrl?: string | null;
+};
+
+/**
+ * Ensure one album is in the catalog (from MusicBrainz or manual) and add it to the user's favorites.
+ * Used by the "Add favorite from search" flow.
+ */
+export async function addSingleAlbumToFavorites(
+  userId: string,
+  item: AddSingleAlbumInput
+): Promise<{ albumId: string; added: boolean }> {
+  const mbid = item.mbid?.trim() || null;
+  const title = item.title.trim();
+  const artistName = item.artistName.trim();
+  const releaseYear =
+    item.releaseYear != null && item.releaseYear >= 1000 && item.releaseYear <= 9999
+      ? item.releaseYear
+      : null;
+  const coverUrl = item.coverUrl?.trim() || null;
+
+  let albumId: string;
+  if (mbid) {
+    let album = await prisma.album.findUnique({ where: { mbid } });
+    if (!album) {
+      const rg = await getReleaseGroupWithCache(mbid);
+      if (!rg) {
+        throw new Error('Album not found in MusicBrainz.');
+      }
+      const artistNameMb = rg['artist-credit']?.[0]?.name ?? artistName;
+      const cover = await getCoverArtUrlForReleaseGroup(mbid);
+      const norm = normalizeAlbum(rg, { coverUrl: cover ?? undefined });
+      const artistId = await ensureArtist(
+        rg['artist-credit']?.[0]?.artist?.id ?? null,
+        artistNameMb
+      );
+      albumId = await ensureAlbum({
+        mbid,
+        title: norm.title,
+        artistId,
+        releaseYear: norm.releaseYear,
+        coverUrl: norm.coverUrl,
+      });
+    } else {
+      albumId = album.id;
+    }
+  } else {
+    const manualMbid = `manual:${slugify(title)}:${slugify(artistName)}:${releaseYear ?? 'na'}`;
+    let album = await prisma.album.findUnique({ where: { mbid: manualMbid } });
+    if (!album) {
+      const artistId = await ensureArtist(null, artistName);
+      albumId = await ensureAlbum({
+        mbid: manualMbid,
+        title,
+        artistId,
+        releaseYear,
+        coverUrl,
+      });
+    } else {
+      albumId = album.id;
+    }
+  }
+
+  const existing = await prisma.userFavoriteAlbum.findUnique({
+    where: { userId_albumId: { userId, albumId } },
+  });
+  if (existing) {
+    return { albumId, added: false };
+  }
+
+  await prisma.userFavoriteAlbum.create({
+    data: { id: randomUUID(), userId, albumId },
+  });
+  return { albumId, added: true };
+}

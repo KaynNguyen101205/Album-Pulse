@@ -50,12 +50,15 @@ export default function WeeklyDropPage() {
     }
   }, []);
 
+  const [hasFavoritesFromApi, setHasFavoritesFromApi] = useState(false);
+
   const loadCurrentDrop = useCallback(async () => {
     setLoadState('loading');
     setErrorMessage(null);
 
     try {
-      const currentDrop = await fetchCurrentWeeklyDrop();
+      const { drop: currentDrop, hasFavorites } = await fetchCurrentWeeklyDrop();
+      setHasFavoritesFromApi(hasFavorites);
       if (!currentDrop) {
         setDrop(null);
         setItems([]);
@@ -207,13 +210,19 @@ export default function WeeklyDropPage() {
         <section className={styles.emptyWrap}>
           <EmptyState
             title="Next drop not ready yet"
-            message="Weekly Drop is built from your favorite albums. Complete onboarding or add more favorites, then we'll generate your first drop (usually within a few minutes)."
+            message={
+              hasFavoritesFromApi
+                ? "We have your favorite albums. Your first drop may still be generating, or add more favorites to improve picks. Try refreshing in a moment."
+                : "Weekly Drop is built from your favorite albums. Complete onboarding or add more favorites, then we'll generate your first drop."
+            }
           />
           <nav className={styles.emptyStateLinks} aria-label="Get started">
-            <Link href="/onboarding" className={styles.emptyStateLink}>
-              Complete onboarding
-            </Link>
-            <Link href="/favorites" className={styles.emptyStateLink}>
+            {!hasFavoritesFromApi && (
+              <Link href="/onboarding" className={styles.emptyStateLink}>
+                Complete onboarding
+              </Link>
+            )}
+            <Link href="/favorites/add" className={styles.emptyStateLink}>
               Add favorite albums
             </Link>
           </nav>
