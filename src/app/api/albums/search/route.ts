@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCoverArtUrlForReleaseGroup } from '@/server/clients/coverart';
 import { searchAlbumsWithCache } from '@/server/clients/musicbrainz';
 import { UpstreamError } from '@/server/clients/http';
+import { parseWithSchema } from '@/lib/validation/parse';
+import { searchQuerySchema } from '@/lib/validation/schemas';
 
 type ErrorBody = {
   error: {
@@ -25,15 +26,17 @@ function errorResponse(
 }
 
 export async function GET(request: NextRequest) {
-  const q = request.nextUrl.searchParams.get('q')?.trim() ?? '';
-  if (!q) {
-    return errorResponse(400, 'bad_request', 'Missing or empty query parameter "q".');
-  }
+  const parsed = parseWithSchema(searchQuerySchema, {
+    q: request.nextUrl.searchParams.get('q') ?? '',
+    limit: request.nextUrl.searchParams.get('limit') ?? undefined,
+  });
+  if (parsed.ok === false) return parsed.response;
+
+  const { q, limit } = parsed.data;
 
   try {
     const candidates = await searchAlbumsWithCache(q, {
-      limit: 10,
-      getCoverUrl: getCoverArtUrlForReleaseGroup,
+      limit: limit ?? 10,
     });
 
     return NextResponse.json({
@@ -59,4 +62,3 @@ export async function GET(request: NextRequest) {
     return errorResponse(500, 'internal_error', 'Unexpected server error.');
   }
 }
-

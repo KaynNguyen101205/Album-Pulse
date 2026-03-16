@@ -17,6 +17,7 @@ import type { OnboardingAlbum, SearchViewState } from '@/components/onboarding/t
 import styles from './page.module.css';
 
 const MINIMUM_ALBUMS = 3;
+const MIN_QUERY_LENGTH = 2;
 const TOTAL_STEPS = 2;
 
 type OnboardingGateState = 'checking' | 'ready' | 'error';
@@ -164,7 +165,7 @@ export default function OnboardingPage() {
     if (gateState !== 'ready' || currentStep !== 1) return;
 
     const trimmed = query.trim();
-    if (!trimmed) {
+    if (!trimmed || trimmed.length < MIN_QUERY_LENGTH) {
       setDebouncedQuery('');
       setSearchState('initial');
       setSearchResults([]);
