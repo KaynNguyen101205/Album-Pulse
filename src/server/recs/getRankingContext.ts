@@ -95,56 +95,86 @@ function normalizeWeightMap(value: unknown): Record<string, number> {
   return output;
 }
 
+const EMPTY_WEIGHTS = {
+  artistWeights: {} as Record<string, number>,
+  tagWeights: {} as Record<string, number>,
+  albumWeights: {} as Record<string, number>,
+};
+
 async function getProfileWeights(userId: string): Promise<{
   artistWeights: Record<string, number>;
   tagWeights: Record<string, number>;
   albumWeights: Record<string, number>;
 }> {
-  const row = await prisma.userPreferenceProfile.findUnique({
-    where: { userId },
-    select: {
-      artistWeights: true,
-      tagWeights: true,
-      albumWeights: true,
-    },
-  });
-  return {
-    artistWeights: normalizeWeightMap(row?.artistWeights),
-    tagWeights: normalizeWeightMap(row?.tagWeights),
-    albumWeights: normalizeWeightMap(row?.albumWeights),
-  };
+  try {
+    const row = await prisma.userPreferenceProfile.findUnique({
+      where: { userId },
+      select: {
+        artistWeights: true,
+        tagWeights: true,
+        albumWeights: true,
+      },
+    });
+    return {
+      artistWeights: normalizeWeightMap(row?.artistWeights),
+      tagWeights: normalizeWeightMap(row?.tagWeights),
+      albumWeights: normalizeWeightMap(row?.albumWeights),
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('does not exist') || msg.includes('UserPreferenceProfile')) {
+      console.warn('[getRankingContext] UserPreferenceProfile table missing or error, using empty weights:', msg.slice(0, 120));
+      return { ...EMPTY_WEIGHTS };
+    }
+    throw err;
+  }
 }
+
+const EMPTY_SUPPRESSIONS = {
+  artists: {} as Record<string, number>,
+  tags: {} as Record<string, number>,
+  albums: {} as Record<string, number>,
+};
 
 async function getActiveSuppressions(userId: string): Promise<{
   artists: Record<string, number>;
   tags: Record<string, number>;
   albums: Record<string, number>;
 }> {
-  const rows = await prisma.userPreferenceSuppression.findMany({
-    where: {
-      userId,
-      expiresAt: { gte: new Date() },
-    },
-    select: {
-      targetType: true,
-      targetValue: true,
-      strength: true,
-    },
-  });
+  try {
+    const rows = await prisma.userPreferenceSuppression.findMany({
+      where: {
+        userId,
+        expiresAt: { gte: new Date() },
+      },
+      select: {
+        targetType: true,
+        targetValue: true,
+        strength: true,
+      },
+    });
 
-  const artists: Record<string, number> = {};
-  const tags: Record<string, number> = {};
-  const albums: Record<string, number> = {};
+    const artists: Record<string, number> = {};
+    const tags: Record<string, number> = {};
+    const albums: Record<string, number> = {};
 
-  for (const row of rows) {
-    const key = normalizeToken(row.targetValue);
-    if (!key) continue;
-    if (row.targetType === 'ARTIST') artists[key] = row.strength;
-    else if (row.targetType === 'TAG') tags[key] = row.strength;
-    else albums[key] = row.strength;
+    for (const row of rows) {
+      const key = normalizeToken(row.targetValue);
+      if (!key) continue;
+      if (row.targetType === 'ARTIST') artists[key] = row.strength;
+      else if (row.targetType === 'TAG') tags[key] = row.strength;
+      else albums[key] = row.strength;
+    }
+
+    return { artists, tags, albums };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('does not exist') || msg.includes('UserPreferenceSuppression')) {
+      console.warn('[getRankingContext] UserPreferenceSuppression table missing or error, using empty suppressions:', msg.slice(0, 120));
+      return { ...EMPTY_SUPPRESSIONS };
+    }
+    throw err;
   }
-
-  return { artists, tags, albums };
 }
 
 async function getRecentRepeatCounts(userId: string): Promise<{
