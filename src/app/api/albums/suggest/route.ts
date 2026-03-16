@@ -10,6 +10,8 @@ import { unauthorized, internalError } from '@/lib/api/errors';
 
 const MIN_FAVORITES_FOR_DROP = 3;
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/albums/suggest
  * Returns album-based suggestions for the dashboard (no Spotify).
