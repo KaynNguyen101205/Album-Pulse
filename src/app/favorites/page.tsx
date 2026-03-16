@@ -138,11 +138,17 @@ export default function FavoritesPage() {
           <Link href="/dashboard" className={styles.navLink}>
             ← Dashboard
           </Link>
+          <Link href="/weekly-drop" className={styles.navLink}>
+            Weekly Drop
+          </Link>
           <Link href="/favorites/add" className={styles.addLink}>
             Add favorite albums
           </Link>
         </nav>
-        <h1 className={styles.title}>Favorites</h1>
+        <h1 className={styles.title}>Favorites & Saved</h1>
+        <p className={styles.subtitle}>
+          Albums you saved from Weekly Drop and albums you added to favorites manually.
+        </p>
       </header>
 
       {onboardingGateState === 'checking' ? (
@@ -167,7 +173,7 @@ export default function FavoritesPage() {
         />
       ) : loadState === 'empty' ? (
         <section className={styles.stateBox}>
-          <p className={styles.emptyText}>No favorites yet</p>
+          <p className={styles.emptyText}>No favorites or saved albums yet</p>
           <Link href="/favorites/add" className={styles.addLinkEmpty}>
             Add favorite albums
           </Link>

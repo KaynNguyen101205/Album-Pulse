@@ -291,6 +291,9 @@ export default function DashboardPage() {
               {isRefreshing ? 'Refreshing…' : 'Refresh recommendations'}
             </button>
           )}
+          <Link className={styles.weeklyDropLink} href="/favorites">
+            View Favorites / Saved
+          </Link>
           <a className={styles.weeklyDropLink} href="/weekly-drop">
             View Weekly Drop
           </a>
@@ -360,6 +363,10 @@ export default function DashboardPage() {
             </Link>
           </nav>
           <p className={styles.emptyStateSecondary}>
+            <Link className={styles.weeklyDropLinkSecondary} href="/favorites">
+              View Favorites / Saved
+            </Link>
+            {' · '}
             <a className={styles.weeklyDropLinkSecondary} href="/weekly-drop">
               View Weekly Drop
             </a>

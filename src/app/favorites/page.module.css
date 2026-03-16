@@ -38,6 +38,14 @@
   letter-spacing: 0.01em;
 }
 
+.subtitle {
+  margin: 0.45rem 0 0;
+  color: #3f4e63;
+  font-size: 0.98rem;
+  max-width: 42rem;
+  line-height: 1.5;
+}
+
 .addLink {
   color: #2563eb;
   font-size: 0.95rem;

@@ -216,6 +216,9 @@ export default function WeeklyDropPage() {
           <Link className={styles.backLink} href="/dashboard">
             Back to Dashboard
           </Link>
+          <Link className={styles.historyLink} href="/favorites">
+            View Favorites / Saved
+          </Link>
           <Link className={styles.historyLink} href="/weekly-drop/history">
             View History
           </Link>
@@ -265,6 +268,9 @@ export default function WeeklyDropPage() {
                 Complete onboarding
               </Link>
             )}
+            <Link href="/favorites" className={styles.emptyStateLink}>
+              View Favorites / Saved
+            </Link>
             <Link href="/favorites/add" className={styles.emptyStateLink}>
               Add favorite albums
             </Link>
