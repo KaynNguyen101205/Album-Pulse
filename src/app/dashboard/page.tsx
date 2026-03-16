@@ -184,20 +184,21 @@ export default function DashboardPage() {
     setRetryNonce((prev) => prev + 1);
   }, []);
 
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+
   const refreshRecommendations = useCallback(async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
+    setRefreshError(null);
     try {
       const res = await fetch('/api/recommendations/refresh', { method: 'POST', cache: 'no-store' });
-      const data = (await res.json()) as { ok?: boolean; generated?: boolean; error?: string };
-      if (data.ok && data.generated) {
-        retryRecommendations();
-      } else if (data.ok && !data.generated) {
-        retryRecommendations();
-      } else {
-        retryRecommendations();
+      const data = (await res.json()) as { ok?: boolean; generated?: boolean; error?: string; message?: string };
+      retryRecommendations();
+      if (!data.ok || data.error) {
+        setRefreshError(data.message ?? data.error ?? 'Could not generate recommendations.');
       }
     } catch {
+      setRefreshError('Request failed. Try again.');
       retryRecommendations();
     } finally {
       setIsRefreshing(false);
@@ -235,6 +236,7 @@ export default function DashboardPage() {
         setDotGoiYId(toStringOrNull(payload?.dotGoiYId));
         setHasFavoritesFromSuggest(payload?.hasFavorites === true);
         setLoadState(normalized.length === 0 ? 'empty' : 'success');
+        if (normalized.length > 0) setRefreshError(null);
       } catch (error) {
         if ((error as Error).name === 'AbortError') return;
         const message = error instanceof Error ? error.message : 'Failed to load recommendations.';
@@ -303,6 +305,13 @@ export default function DashboardPage() {
         onTimeRangeChange={setTimeRange}
         onSortChange={setSort}
       />
+
+      {refreshError && (
+        <p className={styles.refreshError} role="alert">
+          {refreshError}
+          <button type="button" className={styles.refreshErrorDismiss} onClick={() => setRefreshError(null)} aria-label="Dismiss">×</button>
+        </p>
+      )}
 
       {onboardingGateState === 'checking' ? (
         <LoadingSkeleton count={6} />

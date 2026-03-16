@@ -29,6 +29,28 @@ export default function AddFavoritesPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+  const [favoriteMbids, setFavoriteMbids] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const ac = new AbortController();
+    fetch('/api/favorites', { cache: 'no-store', signal: ac.signal })
+      .then((res) => res.ok ? res.json() : Promise.reject(new Error('Failed to load')))
+      .then((data: { items?: Array<{ spotifyId?: string }> }) => {
+        const items = Array.isArray(data?.items) ? data.items : [];
+        const mbids = new Set<string>();
+        items.forEach((item) => {
+          const id = item.spotifyId?.trim();
+          if (id) {
+            mbids.add(id);
+            if (id.startsWith('mb:')) mbids.add(id.slice(3));
+            else mbids.add(`mb:${id}`);
+          }
+        });
+        setFavoriteMbids(mbids);
+      })
+      .catch(() => {});
+    return () => ac.abort();
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query.trim()), DEBOUNCE_MS);
@@ -92,12 +114,28 @@ export default function AddFavoritesPage() {
       if (!res.ok) {
         throw new Error(data.message ?? data.error ?? 'Failed to add.');
       }
+      if (candidate.mbid) {
+        const raw = candidate.mbid.replace(/^mb:/, '');
+        setFavoriteMbids((prev) => {
+          const next = new Set(prev);
+          next.add(candidate.mbid);
+          next.add(raw);
+          next.add(`mb:${raw}`);
+          return next;
+        });
+      }
     } catch (err) {
       setAddError(err instanceof Error ? err.message : 'Failed to add to favorites.');
     } finally {
       setAddingId(null);
     }
   }, []);
+
+  function isInFavorites(c: SearchCandidate): boolean {
+    if (!c.mbid) return false;
+    const raw = c.mbid.replace(/^mb:/, '');
+    return favoriteMbids.has(c.mbid) || favoriteMbids.has(raw) || favoriteMbids.has(`mb:${raw}`);
+  }
 
   return (
     <main className={styles.page}>
@@ -159,6 +197,7 @@ export default function AddFavoritesPage() {
           {results.map((c) => {
             const key = `${c.mbid ?? ''}:${c.title}:${c.artistName}`;
             const isAdding = addingId === key;
+            const inFavorites = isInFavorites(c);
             return (
               <li key={key} className={styles.resultItem}>
                 <div className={styles.resultInfo}>
@@ -180,14 +219,18 @@ export default function AddFavoritesPage() {
                     )}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className={styles.addButton}
-                  onClick={() => addToFavorites(c)}
-                  disabled={isAdding}
-                >
-                  {isAdding ? 'Adding...' : 'Add to favorites'}
-                </button>
+                {inFavorites ? (
+                  <span className={styles.inFavoritesLabel} aria-label="Already in favorites">In favorites</span>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.addButton}
+                    onClick={() => addToFavorites(c)}
+                    disabled={isAdding}
+                  >
+                    {isAdding ? 'Adding...' : 'Add to favorites'}
+                  </button>
+                )}
               </li>
             );
           })}

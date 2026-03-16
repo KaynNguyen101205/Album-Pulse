@@ -61,6 +61,14 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ ok: true, albumId: result.albumId, added: result.added });
   } catch (err) {
+    const isUniqueViolation =
+      err &&
+      typeof err === 'object' &&
+      'code' in err &&
+      (err as { code: string }).code === 'P2002';
+    if (isUniqueViolation) {
+      return NextResponse.json({ ok: true, added: false, message: 'Already in favorites.' });
+    }
     const message = err instanceof Error ? err.message : 'Failed to add album to favorites.';
     if (message.includes('not found')) {
       return NextResponse.json({ error: 'album_not_found', message }, { status: 404 });

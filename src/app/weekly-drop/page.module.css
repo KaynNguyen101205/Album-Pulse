@@ -74,6 +74,16 @@
   cursor: not-allowed;
 }
 
+.generateError {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  font-size: 0.9rem;
+}
+
 .emptyStateLinks {
   display: flex;
   flex-wrap: wrap;

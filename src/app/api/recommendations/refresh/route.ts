@@ -18,12 +18,14 @@ export async function POST() {
     const result = await generateWeeklyDropForUser(userId, { force: true });
 
     if (result.ok === false) {
+      console.warn('[api/recommendations/refresh] generation failed', { userId, error: result.error });
       return NextResponse.json(
         { ok: false, error: result.error, message: result.error === 'no_candidates' ? 'No similar albums in catalog. Add more favorites or try different artists.' : result.error },
         { status: 200 }
       );
     }
 
+    console.info('[api/recommendations/refresh] success', { userId, generated: result.generated, weeklyDropId: result.weeklyDropId });
     return NextResponse.json({
       ok: true,
       generated: result.generated,

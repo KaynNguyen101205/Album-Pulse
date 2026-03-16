@@ -303,6 +303,70 @@ async function getTagOverlapFallbackCandidates(
   return candidates;
 }
 
+const CATALOG_ANY_FALLBACK_MAX = 100;
+
+/**
+ * Last-resort fallback: any album in catalog not in favorites/excluded.
+ * Prefer lower popularity (hidden-gem style). Ensures we can generate a drop
+ * when the catalog has any albums beyond the user's favorites.
+ */
+async function getCatalogAnyFallbackCandidates(
+  excludedIds: Set<string>,
+  suppressedAlbumIds: Set<string>,
+  suppressedArtistNames: Set<string>,
+  recentArtistCounts: Record<string, number>,
+  artistRepeatCapInWindow: number
+): Promise<CandidateAlbum[]> {
+  if (excludedIds.size === 0) return [];
+  const excludedArr = Array.from(excludedIds);
+  const placeholders = excludedArr.map((_, i) => `$${i + 1}`).join(',');
+  const rows = await prisma.$queryRawUnsafe<
+    Array<{
+      id: string;
+      mbid: string;
+      title: string;
+      artistName: string;
+      releaseYear: number | null;
+      coverUrl: string | null;
+      popularityScore: number | null;
+      tagNames: string[] | null;
+    }>
+  >(
+    `SELECT a."id", a."mbid", a."title", ar."name" AS "artistName",
+            a."releaseYear", a."coverUrl", a."popularityScore",
+            (SELECT array_agg(t."name") FROM "AlbumTag" at2
+             JOIN "Tag" t ON t."id" = at2."tagId" WHERE at2."albumId" = a."id") AS "tagNames"
+     FROM "Album" a
+     JOIN "Artist" ar ON ar."id" = a."artistId"
+     WHERE a."id" NOT IN (${placeholders})
+     ORDER BY a."popularityScore" ASC NULLS LAST, a."releaseYear" DESC NULLS LAST
+     LIMIT ${CATALOG_ANY_FALLBACK_MAX}`,
+    ...excludedArr
+  );
+
+  const candidates: CandidateAlbum[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (suppressedAlbumIds.has(normalizeToken(row.id)) || suppressedArtistNames.has(normalizeToken(row.artistName)) || seen.has(row.id)) continue;
+    if (isArtistOverRepeatCap(row.artistName, recentArtistCounts, artistRepeatCapInWindow)) continue;
+    if (!row.title?.trim() || !row.artistName?.trim()) continue;
+    seen.add(row.id);
+    candidates.push({
+      albumId: row.id,
+      mbid: row.mbid,
+      title: row.title,
+      artistName: row.artistName,
+      releaseYear: row.releaseYear,
+      tags: Array.isArray(row.tagNames) ? row.tagNames : [],
+      coverUrl: row.coverUrl,
+      popularityScore: row.popularityScore,
+      hasEmbedding: false,
+      sources: ['tag'],
+    });
+  }
+  return candidates;
+}
+
 /**
  * Apply artist cap: max X albums per artist in the pool.
  */
@@ -496,11 +560,30 @@ export async function generateCandidatesForUser(
       console.info('[generateCandidates] catalog tag-overlap fallback used', { userId, count: tagOverlapCands.length });
     }
   }
+  if (byDedupeKey.size === 0) {
+    const anyCands = await getCatalogAnyFallbackCandidates(
+      excludedIds,
+      suppressedAlbumIds,
+      suppressedArtistNames,
+      recentArtistCounts,
+      artistRepeatCapInWindow
+    );
+    for (const c of anyCands) {
+      const key = getDedupeKey(c.mbid, c.title, c.artistName, c.releaseYear);
+      if (!byDedupeKey.has(key)) byDedupeKey.set(key, c);
+    }
+    if (anyCands.length > 0 && process.env.NODE_ENV !== 'test') {
+      console.info('[generateCandidates] catalog any-album fallback used', { userId, count: anyCands.length });
+    }
+  }
 
   let pool = Array.from(byDedupeKey.values());
   pool = applyArtistCap(pool, MAX_ALBUMS_PER_ARTIST);
   pool = pool.slice(0, maxCandidates);
 
+  if (pool.length === 0 && process.env.NODE_ENV !== 'test') {
+    console.warn('[generateCandidates] zero candidates after all fallbacks', { userId, favoriteCount: favoriteAlbumIds.length });
+  }
   if (process.env.NODE_ENV === 'development') {
     const fromVector = pool.filter((p) => p.sources.includes('vector')).length;
     const fromArtist = pool.filter((p) => p.sources.includes('artist')).length;

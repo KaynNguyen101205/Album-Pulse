@@ -70,6 +70,7 @@ export default function WeeklyDropPage() {
       setDrop(currentDrop);
       setItems(currentDrop.items);
       setLoadState('success');
+      setGenerateError(null);
       void trackEvent({
         eventName: 'weekly_drop_page_view',
         weeklyDropId: currentDrop.id,
@@ -83,11 +84,21 @@ export default function WeeklyDropPage() {
     }
   }, []);
 
+  const [generateError, setGenerateError] = useState<string | null>(null);
+
   const generateDrop = useCallback(async () => {
     if (isGenerating) return;
     setIsGenerating(true);
+    setGenerateError(null);
     try {
-      await fetch('/api/recommendations/refresh', { method: 'POST', cache: 'no-store' });
+      const res = await fetch('/api/recommendations/refresh', { method: 'POST', cache: 'no-store' });
+      const data = (await res.json()) as { ok?: boolean; error?: string; message?: string };
+      await loadCurrentDrop();
+      if (!data.ok || data.error) {
+        setGenerateError(data.message ?? data.error ?? 'Could not generate drop.');
+      }
+    } catch {
+      setGenerateError('Request failed. Try again.');
       await loadCurrentDrop();
     } finally {
       setIsGenerating(false);
@@ -220,6 +231,11 @@ export default function WeeklyDropPage() {
         />
       ) : loadState === 'empty' ? (
         <section className={styles.emptyWrap}>
+          {generateError && (
+            <p className={styles.generateError} role="alert">
+              {generateError}
+            </p>
+          )}
           <EmptyState
             title="Next drop not ready yet"
             message={
