@@ -5,14 +5,32 @@ import { requireSession } from '@/lib/session';
 
 /**
  * Resolve request album identifier to DB mbid.
- * Accepts mbid as-is (mb:xxx, manual:xxx) or legacy Spotify id (prefix with spotify:).
+ * Accepts raw MusicBrainz MBIDs, mb:xxx, manual:xxx, spotify:xxx, or legacy Spotify ids.
  */
-function toAlbumMbid(albumSpotifyId: string): string {
+function toAlbumLookupValues(albumSpotifyId: string): string[] {
   const trimmed = albumSpotifyId.trim();
-  if (trimmed.startsWith('mb:') || trimmed.startsWith('manual:')) {
-    return trimmed;
+  if (!trimmed) return [];
+
+  if (trimmed.startsWith('mb:')) {
+    return [trimmed.slice(3)].filter(Boolean);
   }
-  return `spotify:${trimmed}`;
+
+  if (trimmed.startsWith('manual:') || trimmed.startsWith('spotify:')) {
+    return [trimmed];
+  }
+
+  return [trimmed, `spotify:${trimmed}`];
+}
+
+async function findAlbumByIdentifier(albumSpotifyId: string) {
+  const lookupValues = toAlbumLookupValues(albumSpotifyId);
+  for (const mbid of lookupValues) {
+    const album = await prisma.album.findUnique({
+      where: { mbid },
+    });
+    if (album) return album;
+  }
+  return null;
 }
 
 export async function GET() {
@@ -58,10 +76,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const albumMbid = toAlbumMbid(rawId);
-  const album = await prisma.album.findUnique({
-    where: { mbid: albumMbid },
-  });
+  const album = await findAlbumByIdentifier(rawId);
 
   if (!album) {
     return NextResponse.json(
@@ -100,10 +115,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const albumMbid = toAlbumMbid(rawId);
-  const album = await prisma.album.findUnique({
-    where: { mbid: albumMbid },
-  });
+  const album = await findAlbumByIdentifier(rawId);
 
   if (album) {
     try {
