@@ -212,13 +212,18 @@ export default function WeeklyDropPage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
+        <nav className={styles.headerLinks} aria-label="Weekly Drop navigation">
+          <Link className={styles.backLink} href="/dashboard">
+            Back to Dashboard
+          </Link>
+          <Link className={styles.historyLink} href="/weekly-drop/history">
+            View History
+          </Link>
+        </nav>
         <h1 className={styles.title}>Weekly Drop</h1>
         <p className={styles.subtitle}>
           Five personalized album picks for this week. React quickly and we&apos;ll adapt future drops.
         </p>
-        <Link className={styles.historyLink} href="/weekly-drop/history">
-          View History
-        </Link>
       </header>
 
       {loadState === 'loading' ? (
